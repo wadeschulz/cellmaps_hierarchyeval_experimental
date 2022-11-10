@@ -21,6 +21,7 @@ Evaluate hierarchy from HiDeF
 
 **Organize hidef enrichment into a single table**
 
-Check notebook 
+Use function 'analyze_enrichment' in the utils file [hidef_enrichment_analysis_utils.py](hidef_enrichment_analysis_utils.py)
 
-Check the util.py 
+Check the [Notebook](09162022_small_vs_large_comp_enrichment.ipynb) for the procedures of making plots (NOTE: this notebook is not well organized)
+
