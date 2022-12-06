@@ -1,3 +1,5 @@
+# What do each example file mean and How to use them 
+
 This folder provide examples of parameter sweeping with HiDeF 
 
 The input to HiDeF is U2OS_5183_MUSE_batch_hard_percthre_0.2.tsv, and sweep the stability (chi) in the range of 5, 10, 15, maxresolution(maxres) is either 20 or 40. 
