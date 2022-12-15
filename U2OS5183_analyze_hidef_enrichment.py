@@ -18,8 +18,18 @@ def jaccard(setA, setB):
 ## analyze MuSIC hierarchy genes enriched in GO and Corum and do hypergeometric stats 
 ## default fdr threshold is 0.01 and the JI threshold is 0 
 
-def run_hypergeo_enrichr(ont_ts, hierarchygenes, ref_file, fdr_thre=0.01, ji_thre = 0, minCompSize=4):    
+def run_hypergeo_enrichr(ont_ts, hierarchygenes, ref_file, fdr_thre=0.01, ji_thre = 0, minCompSize=4):  
+    '''
+    ont_ts: the result hierarchy from the community detection 
+    hierarchy genes: total number of genes in the root of the hierarchy 
+    ref_file: the reference cellular component/protein complexes table 
+    fdr_thre: the fdr cutoff to be collected in the enriched terms (default = 0.01)
+    ji_thre: the threshold for Jaccard Idex (default = 0, will set the threshold in the organization step)
+    minCompSize: the smallest component size to be considered for the enrichment (default = 4)
+    '''
+    
     M = len(hierarchygenes)
+    ref_file = ref_file[ref_file['tsize']>=minCompSize]
     track = 0
     ref_df = pd.DataFrame(index=ont_ts.index, columns=ref_file.index, dtype=float)
     ji_df = pd.DataFrame(index=ont_ts.index, columns=ref_file.index, dtype=float)
@@ -139,19 +149,26 @@ df['cc_gene_counts'] = hypergeom_go_enrich_result['gene_counts']
 df['hypergeom_cc_adjPvalues'] = hypergeom_go_enrich_result['adjPvalue']
 df['cc_ji_indexes'] = hypergeom_go_enrich_result['ji_indexes']
 
-# Load CORUM complexes and genes
+# Load CORUM complexes and filter genes
 CORUM_file = '/cellar/users/mhu/MuSIC/Resources/Corum/humanComplexes_062022.txt'
 corum = pd.read_table(CORUM_file,
                       index_col=0)
+
+# set the index to complex ID + complex name 
 corum.index = [str(x) + '_' for x in corum.index.values] + corum['ComplexName']
-corum = corum[['subunits(Gene name)']]
-corum['subunits(Gene name)'] = corum.apply(lambda row: str.join(',', [x for x in row['subunits(Gene name)'].split(';')]), axis=1)
-corum = corum[~(corum['subunits(Gene name)'] == "")]
-corum['tsize'] = corum.apply(lambda row: len(row['subunits(Gene name)'].split(',')), axis=1)
-corum.columns = ['genes', 'tsize']
+corum = corum[['subunits(Gene name)']] # only keep the gene name column 
+corum = corum[~(corum['subunits(Gene name)'] == "")] # remove empty entries
+corum_sort = corum.apply(lambda x: x.str.split(';').explode()) # convert wide table to a long table (each gene will be corresponding to the complex 
+corum_sort = corum_sort[corum_sort['subunits(Gene name)'].isin(hierarchygenes)] # filter out genes that are not in u2os group 
+corum_sort = corum_sort.groupby('ComplexName').transform(lambda x: ','.join(x)).drop_duplicates() # convert back to wide table, each complex has all the associated genes
+corum_sort['tsize'] = corum_sort.apply(lambda x: len(x['subunits(Gene name)'].split(',')), axis=1) # calculate the term size (number of genes in the same complex
+
+corum_sort = corum_sort[(corum_sort['tsize'] >=minTermSize)] #only keep terms contain more than certain number of genes
+corum_sort.columns = ['genes', 'tsize']
+# corum_sort
 
 #run the analysis 
-hypergeom_corum_enrich_result = run_hypergeo_enrichr(df.copy(), hierarchygenes, corum, fdr_thre=fdrthre, minCompSize=minTermSize)
+hypergeom_corum_enrich_result = run_hypergeo_enrichr(df.copy(), hierarchygenes, corum_sort, fdr_thre=fdrthre, minCompSize=minTermSize)
 df['hypergeom_corum_enrich'] = hypergeom_corum_enrich_result['enriched']
 df['hypergeom_corum_terms'] = hypergeom_corum_enrich_result['terms']
 df['corum_gene_counts'] = hypergeom_corum_enrich_result['gene_counts']

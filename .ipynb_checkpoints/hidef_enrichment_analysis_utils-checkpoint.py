@@ -147,7 +147,20 @@ def enrich_edge(enrich_type, df, large = 80, fdr = 0.01, ji = 0.2):
 
 
 ####################function to analyze # of enrichments per hierarchy ##############################
-def analyze_enrichment(label, prefix,  workdir, minTermSize, analyze_day ,refdir = '/cellar/users/mhu/MuSIC/U2OS/resources/',  fdr= 0.01, ji= 0.2, large = 80):
+def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/mhu/MuSIC/U2OS/resources/',  minTermSize = 4,fdr= 0.01, ji= 0.2, large = 80):
+    
+    
+    '''
+    prefix: the prefix used for the output file 
+    workdir: the directory where the inputs are and output will be stored 
+    analyze_day: the date for running the gene set and edge enrichment analysis 
+    refdir: the directory where the reference GO file is stored
+    minTermSize: the minimum size of the node to consider(default = 4)
+    fdr: the fdr cutoff to consider significantly enriched (default = 0.01)
+    ji: the Jaccard Index cutoff to consider significantly enriched terms (only for GO and corum terms, default = 0.2)
+    large: the enriched terms that are bigger than this value will be considered as large (default = 80) (used for separate large and small GO, and collect enriched edges in smaller nodes_
+    
+    '''
     cc_ts = pd.read_table(f'{refdir}cc_noHPA.5183.dropDupTerm.termStats', header = None, index_col = 0)
     cc_ts.columns = ['tsize', 'genes']
  
@@ -167,15 +180,15 @@ def analyze_enrichment(label, prefix,  workdir, minTermSize, analyze_day ,refdir
         child_to_parent = edges_df.groupby('child')['parent'].apply(list) #list of child parent 
         leaves = list((set(edges_df['child'].unique()))-set(edges_df['parent'].unique()))
 
-        if 'RF' in filename:
-            method = 'RF'
-        else: 
-            method = label +re.search('5183_(.+?)_percthre', filename).group(1)
-        # print (method)
-        cutoffthre= re.search('percthre_(.+?).chi', filename).group(1) ##get the cutoff threshold from the name
-        maxres= filename.split('_')[-1] ## get the maxresolution in the name
-        stability= re.search('chi_(.+?).maxres', filename).group(1) #presistent threshold 
-        # print(filename, num_edges, num_nodes, cutoffthre, maxres, stability)
+        # if 'RF' in filename:
+        #     method = 'RF'
+        # else: 
+        #     method = label +re.search('5183_(.+?)_percthre', filename).group(1)
+        # # print (method)
+        # cutoffthre= re.search('percthre_(.+?).chi', filename).group(1) ##get the cutoff threshold from the name
+        # maxres= filename.split('_')[-1] ## get the maxresolution in the name
+        # stability= re.search('chi_(.+?).maxres', filename).group(1) #presistent threshold 
+        # # print(filename, num_edges, num_nodes, cutoffthre, maxres, stability)
 
         if not os.path.exists('{}/{}.noRoot{}.pkl'.format(workdir, filename, analyze_day)):
             continue
@@ -191,7 +204,9 @@ def analyze_enrichment(label, prefix,  workdir, minTermSize, analyze_day ,refdir
         max_breadth = get_maxbreadth(hs_df) ##calculate the maximun breadth of each hierarchy (do not want too deep or too wide hierarchy)
         num_below_level1 = get_numgenes_belowone(hs_df)
         num_child_level1 = num_child(edges_df, hs_df, 'Cluster1')
-        common_df.append([method, cutoffthre, maxres, stability, num_nodes, num_edges, med_depth, max_breadth, avg_leaf_size, num_below_level1, num_child_level1]) ## collect the informations in common
+        ##first column is the file name, including the cutoffs, stability, maxres, algorithm, and coembedding method etc.
+        common_df.append([filename, num_nodes, num_edges, med_depth, max_breadth, avg_leaf_size, num_below_level1, num_child_level1]) ## collect the informations in common
+        # common_df.append([method, cutoffthre, maxres, stability, num_nodes, num_edges, med_depth, max_breadth, avg_leaf_size, num_below_level1, num_child_level1]) ## collect the informations in common
 
         temp = {}
 
@@ -250,9 +265,12 @@ def analyze_enrichment(label, prefix,  workdir, minTermSize, analyze_day ,refdir
 
         # print(f'------ Analyze {filename} enrichment DONE ------')
     print('DONE')
-    common_df = pd.DataFrame(common_df, columns = ["Method", "Percent Edge Cutoff", "MaxRes", "Presistent threshold", "Number of Nodes", "Number of Edges", 
+       common_df = pd.DataFrame(common_df, columns = ["Hierarchy name", "Number of Nodes", "Number of Edges", 
                                                  "MedianDepth", "MaxBreadth","Avg Leaf size", "Number of genes below level one of the hierarchy", 'Avg number of child per level one node'])
+    # common_df = pd.DataFrame(common_df, columns = ["Method", "Percent Edge Cutoff", "MaxRes", "Presistent threshold", "Number of Nodes", "Number of Edges", 
+    #                                              "MedianDepth", "MaxBreadth","Avg Leaf size", "Number of genes below level one of the hierarchy", 'Avg number of child per level one node'])
     new_df= pd.concat([common_df, pd.DataFrame(new_df)], axis = 1)
-    sort_new_df = new_df.sort_values(by=["Method", 'Percent Edge Cutoff','MaxRes', 'Presistent threshold'])
-    sort_new_df.to_csv(workdir + label + prefix+ 'hidef_enrichment_analysis.csv')
+    sort_new_df = new_df.sort_values(by= ['Hierarchy name'])
+    # sort_new_df = new_df.sort_values(by=["Method", 'Percent Edge Cutoff','MaxRes', 'Presistent threshold'])
+    sort_new_df.to_csv(workdir + prefix+ 'hidef_enrichment_analysis.csv')
     return sort_new_df 
