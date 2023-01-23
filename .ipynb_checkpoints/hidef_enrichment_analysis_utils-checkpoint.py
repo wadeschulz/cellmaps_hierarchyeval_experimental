@@ -72,7 +72,7 @@ def num_child(edges, hier, cluster):
     return np.mean(num_child)
 
 # find number of enriched ref components (large vs small)
-def enrich_small_large(enrich_type, df, ref_ts, large = 80, fdr = 0.01, ji = 0.2):
+def enrich_small_large(enrich_type, df, ref_ts, known_comp = None, large = 80, fdr = 0.01, ji = 0.2):
     term_term_mapping = []
     for index,row in df.iterrows():
         pvalues = str(row[f'hypergeom_{enrich_type}_adjPvalues']).split('; ')
@@ -108,6 +108,55 @@ def enrich_small_large(enrich_type, df, ref_ts, large = 80, fdr = 0.01, ji = 0.2
                 else:
                     num_sig_small += 1
     return (num_enriched, num_sig, num_enriched_small, num_sig_small, num_enriched_large, num_sig_large)
+
+## Enrichment for knwon (Gold standard GO terms
+
+'''
+Proteasome =  'GO:0000502'   (size 45)
+Ribosome = 'GO:0005840'    (size 95)
+Nuclear Speck = 'GO:0016607' (size 114)
+mitochondrion = ‘GO:0005739’ (size 591)
+nucleus = ‘GO:0005634’ (size 2555)
+Nuclear pore = 'GO:0005643' (size 45)
+cytoplasm = 'GO:0005737' (size 3650)
+ER = ‘GO:0005783’  (size 522)
+cytosol = ‘GO:0005829’ (size 1724)
+golgi_apparatus = ‘GO:0005794’ (size 413)
+lysosome = 'GO:0005764' (size 241)
+membrane = 'GO:0016020' (size 2270)
+endoplasmic reticulum = ‘GO:0005783’ (size 522)
+
+'''
+
+known_comp = ['GO:0000502', 'GO:0005840', 'GO:0016607', 'GO:0005739','GO:0005634','GO:0005643', 'GO:0005737', 'GO:0005783', 'GO:0005829','GO:0005794', 'GO:0005764','GO:0016020', 'GO:0005783']
+def enrich_GS(enrich_type, df, known_comp, fdr = 0.01, ji = 0.2):
+        term_term_mapping = []
+        for index,row in df.iterrows():
+            pvalues = str(row[f'hypergeom_{enrich_type}_adjPvalues']).split('; ')
+            jaccard_indexes = str(row[f'{enrich_type}_ji_indexes']).split('; ')
+            hypergeom_terms = str(row[f'hypergeom_{enrich_type}_terms']).split('; ')
+            for i in range(len(pvalues) - 1):
+                term_term_mapping.append((index, pvalues[i], hypergeom_terms[i], jaccard_indexes[i]))
+
+        term_term_mapping = pd.DataFrame(term_term_mapping, columns=['term','pval', 'gs_term', 'ji'])
+        num_enriched = 0
+        num_sig = 0
+        taken_gs_terms = []
+        taken_terms = []
+        enriched_GO = dict.fromkeys(known_comp, 0)
+        sig_enriched_GO = dict.fromkeys(known_comp, 0) 
+
+        for index,row in term_term_mapping.sort_values(by='ji', ascending=False).iterrows():
+            if (row['gs_term'] not in taken_gs_terms) & (row['term'] not in taken_terms):
+                taken_gs_terms.append(row['gs_term'])
+                taken_terms.append(row['term'])
+                if (row['gs_term'] in known_comp):
+                    # enriched_GO[row['gs_term']]+=1
+                    enriched_GO[row['gs_term']]=[row['pval'],row['ji']]
+                    if (float(row['pval']) <= fdr) & (float(row['ji']) >= ji):
+                        sig_enriched_GO[row['gs_term']]+=1
+                        num_sig +=1
+        return num_sig, sig_enriched_GO
 
 ## number of enriched components regardless of size 
 def enrich_eval(enrich_type, df, fdr = 0.01, ji = 0.2):
@@ -178,7 +227,7 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
         num_edges = len(edges_df) # total number of edges between clusters 
         edges_df.columns= ['parent', 'child', 'type']
         child_to_parent = edges_df.groupby('child')['parent'].apply(list) #list of child parent 
-        leaves = list((set(edges_df['child'].unique()))-set(edges_df['parent'].unique()))
+        leaves = (set(edges_df['child'].unique()))-set(edges_df['parent'].unique())
 
         # if 'RF' in filename:
         #     method = 'RF'
@@ -198,6 +247,7 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
         depth = [get_depth(x, 0, child_to_parent) for x in leaves]
         med_depth =np.median(depth) ##calculate the median depth
            ##size of leaves
+        leaves = leaves.intersection(hs_df.index.values)
         leaf_size= [hs_df.loc[x, 'tsize'] for x in leaves]
         avg_leaf_size = np.mean(leaf_size)
         # avg_leaf_size = np.mean([y / x for x, y in zip(depth, leaf_size)])
@@ -217,6 +267,8 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
                 frac_sig = num_sig/num_nodes ## ratio of sig enriched
                 num_large_cc = len(cc_ts[cc_ts.tsize>=large])
                 num_small_cc = len(cc_ts[cc_ts.tsize<large])
+                n_sig_known, sig_enriched_terms=enrich_GS(ref, hs_df,known_comp, fdr = 0.01, ji = 0.2)
+                frac_sig_known = n_sig_known/len(known_comp)
                 # frac_sig_small = num_sig_small/num_small_cc
                 # frac_sig_large = num_sig_large/num_large_cc
                 # small_efficiency = num_sig_small/num_nodes
@@ -230,6 +282,9 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
                                 # f"Significant Enriched small {ref.upper()} Systems Efficiency":small_efficiency,
                                 f"Number of Significant large Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": num_sig_large, 
                                 # f"Frac of Significant large Systems in {ref.upper()} large":frac_sig_large
+                                f"Number of Significant well known Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": n_sig_known,
+                                f"Significant well known Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": sig_enriched_terms,
+                                f"Frac of Significant large Systems in {ref.upper()} large":frac_sig_known
                           }}
             elif ref == 'corum':
                 num_enriched, num_sig = enrich_eval(ref, hs_df, fdr, ji)          
@@ -265,7 +320,7 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
 
         # print(f'------ Analyze {filename} enrichment DONE ------')
     print('DONE')
-       common_df = pd.DataFrame(common_df, columns = ["Hierarchy name", "Number of Nodes", "Number of Edges", 
+    common_df = pd.DataFrame(common_df, columns = ["Hierarchy name", "Number of Nodes", "Number of Edges", 
                                                  "MedianDepth", "MaxBreadth","Avg Leaf size", "Number of genes below level one of the hierarchy", 'Avg number of child per level one node'])
     # common_df = pd.DataFrame(common_df, columns = ["Method", "Percent Edge Cutoff", "MaxRes", "Presistent threshold", "Number of Nodes", "Number of Edges", 
     #                                              "MedianDepth", "MaxBreadth","Avg Leaf size", "Number of genes below level one of the hierarchy", 'Avg number of child per level one node'])

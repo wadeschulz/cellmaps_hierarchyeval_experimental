@@ -29,12 +29,12 @@ def run_hypergeo_enrichr(ont_ts, hierarchygenes, ref_file, fdr_thre=0.01, ji_thr
     '''
     
     M = len(hierarchygenes)
-    ref_file = ref_file[ref_file['tsize']>=minCompSize]
+    
     track = 0
     ref_df = pd.DataFrame(index=ont_ts.index, columns=ref_file.index, dtype=float)
     ji_df = pd.DataFrame(index=ont_ts.index, columns=ref_file.index, dtype=float)
     genecount_df = pd.DataFrame(index=ont_ts.index, columns=ref_file.index, dtype=float)
-    for ont_comp, ont_row in ont_ts.iterrows():
+    for ont_comp, ont_row in tqdm(df.iterrows(), total=df.shape[0]):
         track += 1
         ont_comp_genes = ont_row['genes'].split(' ')
         ont_comp_genes = [x for x in ont_comp_genes if len(x) > 1] #in case theres a weird comma
@@ -84,6 +84,8 @@ def run_hypergeo_enrichr(ont_ts, hierarchygenes, ref_file, fdr_thre=0.01, ji_thr
             ont_ts.at[comp, 'ji_indexes'] = str(ji_df.at[comp, term]) + "; " + ont_ts.at[comp, 'ji_indexes'] 
             ont_ts.at[comp, 'adjPvalue'] = str(fdr_df.at[comp, term]) + "; " + ont_ts.at[comp, 'adjPvalue']
             ont_ts.at[comp, 'gene_counts'] = str(genecount_df.at[comp, term]) + "; " + ont_ts.at[comp, 'gene_counts']
+    print(len(ont_ts))
+    print('... finished running geneset enrichment')
     return ont_ts
 
 parser = argparse.ArgumentParser(description='Analyze each system in the given hierarchy.')
@@ -116,15 +118,25 @@ if len(df) > 800:
     sys.exit()
 
 df.columns = ['term', 'tsize', 'genes', 'stability']
-    
+
 root_size = df['tsize'].max()
+
 hierarchygenes = df[df['tsize'] == root_size]['genes'].values[0].split(' ')  ## select the root node and collect all genes there (all genes included in the map)
+print(f'number of hierarchy genes = {len(hierarchygenes)}')
+
+node_rm = None
+if len(df[df['tsize']<minTermsize]) >0:
+    node_rm = df[df['tsize']<minTermsize]['term']#the node need to be removed
+    print('{} is smaller than minimum term size, Removed'.format(node_rm))  
+
 
 if args.w_root:
     df = df[df['tsize'] >= minTermSize]
 else:
     df = df[(df['tsize'] >= minTermSize) & (df['tsize'] < root_size)]
     
+
+
 if df.shape[0] == 0:
     print('=== No system left after size filter ===')
     sys.exit()
@@ -133,6 +145,8 @@ df.set_index('term', inplace=True)
 ### Load edge file
 edges_f = f[:-5] + 'edges'
 edges = pd.read_table(edges_f, header=None)
+if node_rm:
+    edges = edges[~edges[[0, 1]].isin(list(node_rm)).any(axis=1)]
 
 
 ### enrichment analysis in GO and CORUM ###
@@ -140,7 +154,7 @@ GO_file = '/cellar/users/mhu/MuSIC/U2OS/resources/cc_noHPA.5183.dropDupTerm.term
 # Load CC hierarchy (cellular component)
 cc_ts = pd.read_table(GO_file, header=None, index_col=0)
 cc_ts.columns = ['tsize', 'genes']
-
+cc_ts = cc_ts[cc_ts['tsize']>=minTermSize]
 #run the analysis 
 hypergeom_go_enrich_result = run_hypergeo_enrichr(df.copy(), hierarchygenes, cc_ts, fdr_thre=fdrthre, minCompSize=minTermSize)
 df['hypergeom_cc_enrich'] = hypergeom_go_enrich_result['enriched']
@@ -217,14 +231,14 @@ def get_count_pval(ref_matrix, ref_genes, hier_matrix):
             for j in range(i+1, len(ref_x_termgenes)):
                 gb = ref_x_termgenes[j]
                 # check if edge is specific to this system...
-                if children_edges.at[ga,gb] == 1: ## is there an edge in the children nodes?
+                if children_edges.at[ga,gb] == 1: ## is there an edge in the children nodes? if yes, do not count
                     continue
-                if ref_matrix.at[ga, gb] == 1: ## is the edge in the hcm system? if yes, add the edge count
+                if ref_matrix.at[ga, gb] == 1: ## is the edge in the hcm system? if yes, add to the edge count
                     count_value += 1
                     hier_matrix.at[ga, gb] = 1
                     hier_matrix.at[gb, ga] = 1
         
-    N = num_comb(len(ref_x_termgenes)) - sum(upper_tri_values(children_edges.loc[ref_x_termgenes,ref_x_termgenes])) ## number all possible edges of the overlapped genes in the term - number of edges that are in the childnode between these terms
+    N = num_comb(len(ref_x_termgenes)) - sum(upper_tri_values(children_edges.loc[ref_x_termgenes,ref_x_termgenes])) ## number all possible edges of the overlapped genes in the term - number of edges that are in the child nodes
     ref_pval= hypergeom.sf(count_value -1, M, total, N) # hypermeometric stats
     return count_value, sum(upper_tri_values(hier_matrix)), ref_pval # return edge counts, unique edges and p value from hyermeometric 
 
@@ -252,17 +266,19 @@ for idx, row in tqdm(df.iterrows(), total=df.shape[0]):
     children = edges[edges[0] == idx] # children is all the edges the system have in the edges file 
     children_edges = pd.DataFrame(0, index=termgenes, columns=termgenes, dtype=int)
     for child in children[1].values: #children[0] is the parent children[1] are the child nodes
-        child_genes = df.loc[child, 'genes'].split(' ') # find genes in each child node
-        for i in range(len(child_genes)-1):
-            ga = child_genes[i]
-            if ga not in termgenes: #skip the genes that is not in parent
-                continue
-            for j in range(i+1, len(child_genes)):
-                gb = child_genes[j]
-                if gb not in termgenes:
+        if child in df.index.values: #b/c node table is filtered by the term size >= 4 but edges may still contain small components 
+            child_genes = df.loc[child, 'genes'].split(' ') # find genes in each child node
+            # print(child_genes)
+            for i in range(len(child_genes)-1):
+                ga = child_genes[i]
+                if ga not in termgenes: #skip the genes that is not in parent
                     continue
-                children_edges.at[ga, gb] = 1  ## get an edge between each pair of genes (that is also in the parents)
-                children_edges.at[gb, ga] = 1
+                for j in range(i+1, len(child_genes)):
+                    gb = child_genes[j]
+                    if gb not in termgenes:
+                        continue
+                    children_edges.at[ga, gb] = 1  ## get an edge between each pair of genes (that is also in the parents)
+                    children_edges.at[gb, ga] = 1
 
     #start with smallest nodes to get children....
     hier_hcm = pd.DataFrame(0, index=hcm_genes, columns=hcm_genes, dtype=int)
