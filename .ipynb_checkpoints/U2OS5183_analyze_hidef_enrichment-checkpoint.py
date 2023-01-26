@@ -164,7 +164,7 @@ df['hypergeom_cc_adjPvalues'] = hypergeom_go_enrich_result['adjPvalue']
 df['cc_ji_indexes'] = hypergeom_go_enrich_result['ji_indexes']
 
 # Load CORUM complexes and filter genes
-CORUM_file = '/cellar/users/mhu/MuSIC/Resources/Corum/humanComplexes_062022.txt'
+CORUM_file = '/cellar/users/mhu/MuSIC/Resources/Corum/humanComplexes_28112022.txt'
 corum = pd.read_table(CORUM_file,
                       index_col=0)
 
@@ -231,14 +231,14 @@ def get_count_pval(ref_matrix, ref_genes, hier_matrix):
             for j in range(i+1, len(ref_x_termgenes)):
                 gb = ref_x_termgenes[j]
                 # check if edge is specific to this system...
-                if children_edges.at[ga,gb] == 1: ## is there an edge in the children nodes?
+                if children_edges.at[ga,gb] == 1: ## is there an edge in the children nodes? if yes, do not count
                     continue
-                if ref_matrix.at[ga, gb] == 1: ## is the edge in the hcm system? if yes, add the edge count
+                if ref_matrix.at[ga, gb] == 1: ## is the edge in the hcm system? if yes, add to the edge count
                     count_value += 1
                     hier_matrix.at[ga, gb] = 1
                     hier_matrix.at[gb, ga] = 1
         
-    N = num_comb(len(ref_x_termgenes)) - sum(upper_tri_values(children_edges.loc[ref_x_termgenes,ref_x_termgenes])) ## number all possible edges of the overlapped genes in the term - number of edges that are in the childnodes
+    N = num_comb(len(ref_x_termgenes)) - sum(upper_tri_values(children_edges.loc[ref_x_termgenes,ref_x_termgenes])) ## number all possible edges of the overlapped genes in the term - number of edges that are in the child nodes
     ref_pval= hypergeom.sf(count_value -1, M, total, N) # hypermeometric stats
     return count_value, sum(upper_tri_values(hier_matrix)), ref_pval # return edge counts, unique edges and p value from hyermeometric 
 

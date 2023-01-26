@@ -124,11 +124,10 @@ cytosol = ‘GO:0005829’ (size 1724)
 golgi_apparatus = ‘GO:0005794’ (size 413)
 lysosome = 'GO:0005764' (size 241)
 membrane = 'GO:0016020' (size 2270)
-endoplasmic reticulum = ‘GO:0005783’ (size 522)
 
 '''
 
-known_comp = ['GO:0000502', 'GO:0005840', 'GO:0016607', 'GO:0005739','GO:0005634','GO:0005643', 'GO:0005737', 'GO:0005783', 'GO:0005829','GO:0005794', 'GO:0005764','GO:0016020', 'GO:0005783']
+known_comp = ['GO:0000502', 'GO:0005840', 'GO:0016607', 'GO:0005739','GO:0005634','GO:0005643', 'GO:0005737', 'GO:0005783', 'GO:0005829','GO:0005794', 'GO:0005764','GO:0016020']
 def enrich_GS(enrich_type, df, known_comp, fdr = 0.01, ji = 0.2):
         term_term_mapping = []
         for index,row in df.iterrows():

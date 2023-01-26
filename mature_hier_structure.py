@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 import sys
 import os
 import argparse
@@ -172,7 +173,7 @@ parser.add_argument('--ji_thre', type=float, default=0.9,
                     help='Jaccard index threshold for merging similar clusters')
 parser.add_argument('--minSystemSize', type=int, default=4, 
                     help='Minimum number of proteins requiring each system to have.')
-parser.add_argument('--path_to_alignOntology', default = 'cellar/users/mhu/MuSIC/ddot/ddot/alignOntology', help='Full path to alignOntology.')
+parser.add_argument('--path_to_alignOntology', default = '/cellar/users/mhu/MuSIC/ddot/ddot/alignOntology', help='Full path to alignOntology.')
 parser.add_argument('--min_diff', type=int, default=1, help='Minimum difference in number of proteins for every parent-child pair.')
 args = parser.parse_args()
 
@@ -222,6 +223,12 @@ for i, rows in nodes.iterrows():
     cleaned.append(' '.join(genes))
 
 nodes['genes'] = cleaned
+nodes['logsize'] = [math.log2(x) for x in nodes['size']] ## add logsize to the nodes file (to read in cytoscape) 
 nodes.to_csv(outprefix+'_pruned.nodes', header=False, sep='\t')
 
+
+edges = edges_df[edges_df['type']=='default']# create the hidef format edges 
+edges.to_csv(outprefix+'_pruned.edges',sep = '\t', header=None,index=None) 
+
+print(f'Number of edges is {len(edges)}, number of nodes are {len(nodes)}')
 print('=== finished mature_hier_structure.py ====')

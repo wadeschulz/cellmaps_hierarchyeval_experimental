@@ -164,7 +164,7 @@ df['hypergeom_cc_adjPvalues'] = hypergeom_go_enrich_result['adjPvalue']
 df['cc_ji_indexes'] = hypergeom_go_enrich_result['ji_indexes']
 
 # Load CORUM complexes and filter genes
-CORUM_file = '/cellar/users/mhu/MuSIC/Resources/Corum/humanComplexes_062022.txt'
+CORUM_file = '/cellar/users/mhu/MuSIC/Resources/Corum/humanComplexes_28112022.txt'
 corum = pd.read_table(CORUM_file,
                       index_col=0)
 
