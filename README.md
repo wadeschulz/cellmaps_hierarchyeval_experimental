@@ -23,5 +23,5 @@ Evaluate hierarchy from HiDeF
 
 Use function 'analyze_enrichment' in the utils file [hidef_enrichment_analysis_utils.py](hidef_enrichment_analysis_utils.py)
 
-Check the [Notebook](09162022_small_vs_large_comp_enrichment.ipynb) for the procedures of making plots (NOTE: this notebook is not well organized)
+Check the [Notebook](./HiDeF_Hierarchy_eval_pipeline.ipynb) for the cleaned pipeline to run the evaluation analysis 
 
