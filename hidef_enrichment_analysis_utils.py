@@ -47,7 +47,7 @@ def get_maxbreadth(hier):
     breadth = max(nodes_num)
     return breadth
 
-# return the number of genes that are under level 1
+# return the number of genes that are assigned to clusters that are below level one 
 def get_numgenes_belowone(hier):
     idx = [x.startswith('Cluster1') == False | x.startswith('Cluster0') == False for x in hier.index] #get rows that is below 1 
     belowone = hier[idx]
@@ -109,7 +109,7 @@ def enrich_small_large(enrich_type, df, ref_ts, known_comp = None, large = 80, f
                     num_sig_small += 1
     return (num_enriched, num_sig, num_enriched_small, num_sig_small, num_enriched_large, num_sig_large)
 
-## Enrichment for knwon (Gold standard GO terms
+## Enrichment for known (Gold standard GO terms) -----As for Dec 2022, these are manually put in 
 
 '''
 Proteasome =  'GO:0000502'   (size 45)
@@ -320,7 +320,7 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
         # print(f'------ Analyze {filename} enrichment DONE ------')
     print('DONE')
     common_df = pd.DataFrame(common_df, columns = ["Hierarchy name", "Number of Nodes", "Number of Edges", 
-                                                 "MedianDepth", "MaxBreadth","Avg Leaf size", "Number of genes below level one of the hierarchy", 'Avg number of child per level one node'])
+                                                 "MedianDepth", "MaxBreadth","Avg Leaf size", "Number of genes assigned to nodes with depth >= 2", 'Avg number of child per level one node'])
     # common_df = pd.DataFrame(common_df, columns = ["Method", "Percent Edge Cutoff", "MaxRes", "Presistent threshold", "Number of Nodes", "Number of Edges", 
     #                                              "MedianDepth", "MaxBreadth","Avg Leaf size", "Number of genes below level one of the hierarchy", 'Avg number of child per level one node'])
     new_df= pd.concat([common_df, pd.DataFrame(new_df)], axis = 1)
