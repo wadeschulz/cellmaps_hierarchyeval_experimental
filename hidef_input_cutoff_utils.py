@@ -10,13 +10,42 @@ from tqdm import tqdm
 import seaborn as sns
 import math
 
+##Save similarity matrix 
+
+def make_sim_matrix(X,savedir, prefix, sim_type = 'euc_sim'):
+    '''
+    X: the input embedding 
+    savedir: path to save the file 
+    prefix: the prefix to name the similarity matrix 
+    sim_type: the similarity calculation between pairs (euc_sim, or cos_sim), default: 'euc_sim' 
+    '''
+    if sim_type == 'euc_sim':
+    
+        with open('{}/{}.{}.scaled.pkl'.format(savedir, prefix, sim_type), 'wb') as f:
+            pickle.dump(euclidean_similarity(X), f)
+    
+    if sim_type == 'cos_sim':
+        with open('{}/{}.{}.scaled.pkl'.format(savedir, prefix, sim_type), 'wb') as f:
+            pickle.dump(cosine_similarity_scaled(X), f)
+    
+
 ## convert similarity matrix to pairwise distances
-def mat_to_pairs(sim_mat):
+def mat_to_pairs(sim_mat_dir, sort = True):
+    '''
+    function to convert similarity matrix to pairwise distances/similarities
+    
+    sim_mat_dir: directory of the input sim_mat
+    sort: sort the pair-wise similarities by descending weight, type= boolean, default is True
+    
+    '''
+    sim_mat = load_obj(sim_mat_dir)
     keep = np.triu(np.ones(sim_mat.shape)).astype(bool) ##keep the upper triangle  
     #keep
     sim_mat = sim_mat.where(keep)
     pair_mat = sim_mat.stack().reset_index().rename(columns={'level_0': 'GeneA', 'level_1': 'GeneB', 0: 'Weight'})
     pair_mat = pair_mat[pair_mat['GeneA'] != pair_mat['GeneB']]
+    if sort: 
+        pair_mat = pair_mat.sort_values('Weight', ascending=False) 
     return pair_mat
 
 ######Check how number of proteins changes and the percentage of edges changes at different weight cutoff#####
@@ -63,7 +92,7 @@ def perc_cut_tit(sorted_df, perc_cutoff):
     for i in perc_cutoff:
         keep =math.ceil((i/100)*total_edges)
         # print(keep) 
-        df_cutoff = sorted_df.iloc[0:keep+1]
+        df_cutoff = sorted_df.iloc[0:keep]
         gene_list = set(df_cutoff['geneA']).union(set(df_cutoff['geneB']))
         num_genes.append(len(gene_list))
         dist_max.append(min(df_cutoff['weight']))

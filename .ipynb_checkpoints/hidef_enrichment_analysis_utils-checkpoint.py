@@ -97,17 +97,18 @@ def enrich_small_large(enrich_type, df, ref_ts, known_comp = None, large = 80, f
             taken_gs_terms.append(row['gs_term'])
             taken_terms.append(row['term'])
             num_enriched += 1
-            if row['tsize'] >= large:
-                num_enriched_large += 1
-            else:
-                num_enriched_small += 1
-            if (float(row['pval']) <= fdr) & (float(row['ji']) >= ji):
-                num_sig +=1
-                if row['tsize'] >= 80:
-                    num_sig_large += 1
+            if (float(row['pval']) <= fdr):#set p < fdr thre as the enriched term
+                if row['tsize'] >= large:
+                    num_enriched_large += 1
                 else:
-                    num_sig_small += 1
-    return (num_enriched, num_sig, num_enriched_small, num_sig_small, num_enriched_large, num_sig_large)
+                    num_enriched_small += 1
+                if (float(row['pval']) <= fdr) & (float(row['ji']) >= ji):
+                    num_sig +=1
+                    if row['tsize'] >= 80:
+                        num_sig_large += 1
+                    else:
+                        num_sig_small += 1
+    return num_enriched, num_sig, num_enriched_small, num_sig_small, num_enriched_large, num_sig_large
 
 ## Enrichment for known (Gold standard GO terms) -----As for Dec 2022, these are manually put in 
 
@@ -149,13 +150,14 @@ def enrich_GS(enrich_type, df, known_comp, fdr = 0.01, ji = 0.2):
             if (row['gs_term'] not in taken_gs_terms) & (row['term'] not in taken_terms):
                 taken_gs_terms.append(row['gs_term'])
                 taken_terms.append(row['term'])
-                if (row['gs_term'] in known_comp):
+                if (row['gs_term'] in known_comp)&(float(row['pval']) <= fdr): #set p < fdr thre as the enriched term
                     # enriched_GO[row['gs_term']]+=1
                     enriched_GO[row['gs_term']]=[row['pval'],row['ji']]
+                    num_enriched +=1
                     if (float(row['pval']) <= fdr) & (float(row['ji']) >= ji):
                         sig_enriched_GO[row['gs_term']]+=1
                         num_sig +=1
-        return num_sig, sig_enriched_GO
+        return num_enriched, num_sig, sig_enriched_GO
 
 ## number of enriched components regardless of size 
 def enrich_eval(enrich_type, df, fdr = 0.01, ji = 0.2):
@@ -177,10 +179,12 @@ def enrich_eval(enrich_type, df, fdr = 0.01, ji = 0.2):
             if (row['gs_term'] not in taken_gs_terms) & (row['term'] not in taken_terms):
                 taken_gs_terms.append(row['gs_term'])
                 taken_terms.append(row['term'])
-                num_enriched += 1
-                if (float(row['pval']) <= fdr) & (float(row['ji']) >= ji):
+                if (float(row['pval']) <= fdr): #set p < fdr thre as the enriched term
+                    num_enriched += 1
+              
+                    if (float(row['pval']) <= fdr) & (float(row['ji']) >= ji):
                     num_sig +=1
-        return (num_enriched, num_sig)
+        return num_enriched, num_sig
 
 ## number of enriched edges for nodes smaller than a particular size 
 def enrich_edge(enrich_type, df, large = 80, fdr = 0.01, ji = 0.2):
@@ -266,13 +270,13 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
                 frac_sig = num_sig/num_nodes ## ratio of sig enriched
                 num_large_cc = len(cc_ts[cc_ts.tsize>=large])
                 num_small_cc = len(cc_ts[cc_ts.tsize<large])
-                n_sig_known, sig_enriched_terms=enrich_GS(ref, hs_df,known_comp, fdr = 0.01, ji = 0.2)
+                num_enriched_known, n_sig_known, sig_enriched_terms=enrich_GS(ref, hs_df,known_comp, fdr = 0.01, ji = 0.2)
                 frac_sig_known = n_sig_known/len(known_comp)
                 # frac_sig_small = num_sig_small/num_small_cc
                 # frac_sig_large = num_sig_large/num_large_cc
                 # small_efficiency = num_sig_small/num_nodes
 
-                temp = {**temp, **{#f"Number of components enriched in {ref.upper()}":num_enriched, 
+                temp = {**temp, **{#f"Number of components enriched in {ref.upper()}(FDR <= {fdr})":num_enriched, 
                                 #f"Frac of Enriched Systems ({ref.upper()})":frac_enrich, 
                                 f"Number of Significant Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": num_sig, 
                                 f"Frac of Significant Systems ({ref.upper()})":frac_sig,
@@ -281,6 +285,7 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
                                 # f"Significant Enriched small {ref.upper()} Systems Efficiency":small_efficiency,
                                 f"Number of Significant large Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": num_sig_large, 
                                 # f"Frac of Significant large Systems in {ref.upper()} large":frac_sig_large
+                                # f"Number of enriched well knoen Systems in {ref.upper()} (FDR <= {fdr})": num_enriched_known,
                                 f"Number of Significant well known Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": n_sig_known,
                                 f"Significant well known Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": sig_enriched_terms,
                                 f"Frac of Significant large Systems in {ref.upper()} large":frac_sig_known
@@ -290,7 +295,7 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
                 frac_enrich =num_enriched/num_nodes ## ratio of enriched systems
                 frac_sig = num_sig/num_nodes ## ratio of sig enriched
 
-                temp = {**temp, **{f"Number of components enriched in {ref.upper()}":num_enriched, 
+                temp = {**temp, **{f"Number of components enriched in {ref.upper()} (FDR <= {fdr})":num_enriched, 
                                         f"Ratio of Enriched Systems ({ref.upper()})":frac_enrich, 
                                         f"Number of Significant Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": num_sig, 
                                         f"Ratio of Significant Systems ({ref.upper()})":frac_sig}}

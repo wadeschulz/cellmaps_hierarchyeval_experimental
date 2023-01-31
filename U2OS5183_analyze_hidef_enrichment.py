@@ -34,7 +34,7 @@ def run_hypergeo_enrichr(ont_ts, hierarchygenes, ref_file, fdr_thre=0.01, ji_thr
     ref_df = pd.DataFrame(index=ont_ts.index, columns=ref_file.index, dtype=float)
     ji_df = pd.DataFrame(index=ont_ts.index, columns=ref_file.index, dtype=float)
     genecount_df = pd.DataFrame(index=ont_ts.index, columns=ref_file.index, dtype=float)
-    for ont_comp, ont_row in tqdm(df.iterrows(), total=df.shape[0]):
+    for ont_comp, ont_row in tqdm(ont_ts.iterrows(), total=ont_ts.shape[0]):
         track += 1
         ont_comp_genes = ont_row['genes'].split(' ')
         ont_comp_genes = [x for x in ont_comp_genes if len(x) > 1] #in case theres a weird comma
@@ -125,8 +125,8 @@ hierarchygenes = df[df['tsize'] == root_size]['genes'].values[0].split(' ')  ## 
 print(f'number of hierarchy genes = {len(hierarchygenes)}')
 
 node_rm = None
-if len(df[df['tsize']<minTermsize]) >0:
-    node_rm = df[df['tsize']<minTermsize]['term']#the node need to be removed
+if len(df[df['tsize']<minTermSize]) >0:
+    node_rm = df[df['tsize']<minTermSize]['term']#the node need to be removed
     print('{} is smaller than minimum term size, Removed'.format(node_rm))  
 
 
