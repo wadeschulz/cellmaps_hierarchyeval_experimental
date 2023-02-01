@@ -183,7 +183,7 @@ def enrich_eval(enrich_type, df, fdr = 0.01, ji = 0.2):
                     num_enriched += 1
               
                     if (float(row['pval']) <= fdr) & (float(row['ji']) >= ji):
-                    num_sig +=1
+                        num_sig +=1
         return num_enriched, num_sig
 
 ## number of enriched edges for nodes smaller than a particular size 
@@ -285,7 +285,7 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
                                 # f"Significant Enriched small {ref.upper()} Systems Efficiency":small_efficiency,
                                 f"Number of Significant large Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": num_sig_large, 
                                 # f"Frac of Significant large Systems in {ref.upper()} large":frac_sig_large
-                                # f"Number of enriched well knoen Systems in {ref.upper()} (FDR <= {fdr})": num_enriched_known,
+                                f"Number of enriched well known Systems in {ref.upper()} (FDR <= {fdr})": num_enriched_known,
                                 f"Number of Significant well known Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": n_sig_known,
                                 f"Significant well known Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": sig_enriched_terms,
                                 f"Frac of Significant large Systems in {ref.upper()} large":frac_sig_known
