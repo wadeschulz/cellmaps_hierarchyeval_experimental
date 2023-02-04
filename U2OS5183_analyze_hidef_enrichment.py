@@ -124,7 +124,7 @@ root_size = df['tsize'].max()
 hierarchygenes = df[df['tsize'] == root_size]['genes'].values[0].split(' ')  ## select the root node and collect all genes there (all genes included in the map)
 print(f'number of hierarchy genes = {len(hierarchygenes)}')
 
-node_rm = None
+node_rm = []
 if len(df[df['tsize']<minTermSize]) >0:
     node_rm = df[df['tsize']<minTermSize]['term']#the node need to be removed
     print('{} is smaller than minimum term size, Removed'.format(node_rm))  
@@ -145,7 +145,7 @@ df.set_index('term', inplace=True)
 ### Load edge file
 edges_f = f[:-5] + 'edges'
 edges = pd.read_table(edges_f, header=None)
-if node_rm:
+if len(node_rm) > 0:
     edges = edges[~edges[[0, 1]].isin(list(node_rm)).any(axis=1)]
 
 

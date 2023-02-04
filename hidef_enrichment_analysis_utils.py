@@ -183,7 +183,7 @@ def enrich_eval(enrich_type, df, fdr = 0.01, ji = 0.2):
                     num_enriched += 1
               
                     if (float(row['pval']) <= fdr) & (float(row['ji']) >= ji):
-                    num_sig +=1
+                        num_sig +=1
         return num_enriched, num_sig
 
 ## number of enriched edges for nodes smaller than a particular size 
