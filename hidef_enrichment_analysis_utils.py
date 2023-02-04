@@ -285,7 +285,7 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
                                 # f"Significant Enriched small {ref.upper()} Systems Efficiency":small_efficiency,
                                 f"Number of Significant large Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": num_sig_large, 
                                 # f"Frac of Significant large Systems in {ref.upper()} large":frac_sig_large
-                                # f"Number of enriched well knoen Systems in {ref.upper()} (FDR <= {fdr})": num_enriched_known,
+                                f"Number of enriched well known Systems in {ref.upper()} (FDR <= {fdr})": num_enriched_known,
                                 f"Number of Significant well known Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": n_sig_known,
                                 f"Significant well known Systems ({ref.upper()}) with FDR <= {fdr}, JI >= {ji}": sig_enriched_terms,
                                 f"Frac of Significant large Systems in {ref.upper()} large":frac_sig_known
