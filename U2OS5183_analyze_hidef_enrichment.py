@@ -204,7 +204,7 @@ def load_data(filedir, rootgenes):
 hcm, hcm_genes = load_data('/cellar/users/mhu/MuSIC/U2OS/resources/BFDR_leq0.01.M.pkl', hierarchygenes)
 achilles_2std, achilles_genes = load_data('/cellar/users/mhu/MuSIC/U2OS/resources/achilles_22Q2.pcorr.M.2std.pkl', hierarchygenes)
 bioplex, bioplex_genes = load_data('/cellar/users/mhu/MuSIC/U2OS/resources/U2OS_bioplex_012623.M.pkl', hierarchygenes)
-pcnet, pcnet_genes = load_data('/cellar/users/mhu/MuSIC/U2OS/resources/U2OS_5032_pcnet_102422.M.pkl', hierarchygenes)
+pcnet, pcnet_genes = load_data('/cellar/users/mhu/MuSIC/U2OS/resources/U2OS_5047_pcnet_013123.M.pkl', hierarchygenes)
 opencell, opencell_genes = load_data('/cellar/users/mhu/MuSIC/U2OS/resources/opencell_081022_M.pkl', hierarchygenes)
                                  
 print('... finished loading data')
