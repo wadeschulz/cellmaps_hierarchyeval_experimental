@@ -18,7 +18,7 @@ where k is the stability, maxres is the maximum resolution, alg is the community
 **Run analyze hidef enrichment**
 
 ```
-python -u ./U2OS5183_analyze_hidef_enrichment.py --$PARAM
+python -u ./U2OS5183_analyze_hidef_enrichment.py $PARAM
 ```
 
 PARAM: 
