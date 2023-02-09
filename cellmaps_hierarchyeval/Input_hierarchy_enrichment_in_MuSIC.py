@@ -1,15 +1,12 @@
 import pandas as pd
-import numpy as np
 from tqdm import tqdm
 import sys
 import os
 import argparse
 from statsmodels.stats.multitest import multipletests
 from scipy.stats import hypergeom, mannwhitneyu, ks_2samp
-sys.path.append('/cellar/users/mhu/MuSIC')
-from music_utils import *
-import networkx as nx
-import json 
+
+import json
 
 ## calculate jaccard score
 def jaccard(setA, setB):

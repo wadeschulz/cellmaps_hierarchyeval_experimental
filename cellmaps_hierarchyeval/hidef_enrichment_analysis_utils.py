@@ -1,15 +1,10 @@
 import pandas as pd
 import numpy as np
-import dill
-import sys
-sys.path.append('/cellar/users/mhu/MuSIC')
-from music_utils import *
-import matplotlib.pyplot as plt
+import os
+from cellmaps_utils.music_tools import load_obj
 from glob import glob
 from tqdm import tqdm
-import seaborn as sns
 import re
-import statistics
 
 ##Functions to use for enrichment analysis 
 
