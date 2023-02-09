@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pickle
-from cellmaps_utils.music_tools import euclidean_similarity, cosine_similarity_scaled, load_obj
+from cellmaps_utils.music_utils import euclidean_similarity, cosine_similarity_scaled, load_obj
 import matplotlib.pyplot as plt
 
 import math

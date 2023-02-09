@@ -3,7 +3,7 @@ from tqdm import tqdm
 import sys
 import os
 import argparse
-from cellmaps_utils.music_tools import load_obj, upper_tri_values
+from cellmaps_utils.music_utils import load_obj, upper_tri_values
 from statsmodels.stats.multitest import multipletests
 from scipy.stats import hypergeom
 import json
