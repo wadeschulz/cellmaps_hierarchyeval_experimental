@@ -15,6 +15,7 @@ where k is the stability, maxres is the maximum resolution, alg is the community
 
 ### Step 1:
 
+
 **Run analyze hidef enrichment**
 
 ```
