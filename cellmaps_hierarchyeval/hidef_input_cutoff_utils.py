@@ -1,13 +1,9 @@
 import pandas as pd
 import numpy as np
-import dill
-import sys
-sys.path.append('/cellar/users/mhu/MuSIC')
-from music_utils import *
+import pickle
+from cellmaps_utils.music_tools import euclidean_similarity, cosine_similarity_scaled, load_obj
 import matplotlib.pyplot as plt
-from glob import glob
-from tqdm import tqdm
-import seaborn as sns
+
 import math
 
 ##Save similarity matrix 

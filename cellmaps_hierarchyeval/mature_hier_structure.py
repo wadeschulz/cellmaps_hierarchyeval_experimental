@@ -1,15 +1,11 @@
-import pandas as pd
-import numpy as np
+
 import math
-import sys
+
 import os
 import argparse
 import networkx as nx
-sys.path.append('/cellar/users/mhu/MuSIC')
-from music_utils import *
-sys.path.append('/cellar/users/mhu/MuSIC/U2OS/hidef')
 #function for make ontologies
-from make_hidefOnt_utils import *
+from cellmaps_hierarchyeval.make_hidefOnt_utils import *
 
 def to_pandas_dataframe(G):
     e = G.edges(data=True)
@@ -227,7 +223,7 @@ nodes['logsize'] = [math.log2(x) for x in nodes['size']] ## add logsize to the n
 nodes.to_csv(outprefix+'_pruned.nodes', header=False, sep='\t')
 
 
-edges = edges_df[edges_df['type']=='default']# create the hidef format edges 
+edges = edge_df[edge_df['type']=='default']# create the hidef format edges
 edges.to_csv(outprefix+'_pruned.edges',sep = '\t', header=None,index=None) 
 
 print(f'Number of edges is {len(edges)}, number of nodes are {len(nodes)}')
