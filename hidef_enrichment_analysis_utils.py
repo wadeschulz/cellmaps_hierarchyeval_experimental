@@ -197,6 +197,32 @@ def enrich_edge(enrich_type, df, large = 80, fdr = 0.01, ji = 0.2):
     return (num_enriched, num_sig, num_enrich_edges, num_unique_edges)
 
 
+#### Function for picking one best enrichment term and annotate the node with it
+
+def annotation_enrich(enrich_type, df, fdr = 0.01, ji = 0.2):
+    '''
+    used for picking one best enriched term and annotate the system 
+    enrich_type: type of databased use for annotation, options: 'cc', 'corum'
+    df: the hidef hierarchy nodes file after enrichment analysis
+    fdr: cutoff for calling enriched 
+    ji: JI for calling significant
+    '''
+    term_term_mapping = []
+    for index,row in df.iterrows():
+        pvalues = str(row[f'hypergeom_{enrich_type}_adjPvalues']).split('; ')
+        jaccard_indexes = str(row[f'{enrich_type}_ji_indexes']).split('; ')
+        hypergeom_terms = str(row[f'hypergeom_{enrich_type}_terms']).split('; ')
+        if pvalues[0]:
+            if (float(pvalues[0])<= fdr) & (float(jaccard_indexes[0])>=ji):
+                term_term_mapping.append((index, hypergeom_terms[0], pvalues[0], jaccard_indexes[0]))
+            else:
+                term_term_mapping.append((index, '', '', ''))
+        else: 
+            term_term_mapping.append((index, '', '', ''))
+    term_term_mapping = pd.DataFrame(term_term_mapping, columns=['term',f'{enrich_type}_term',f'{enrich_type}_pval', f'{enrich_type}_ji'])
+    return term_term_mapping
+
+
 
 ####################function to analyze # of enrichments per hierarchy ##############################
 def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/mhu/MuSIC/U2OS/resources/',  minTermSize = 4,fdr= 0.01, ji= 0.2, large = 80):
@@ -333,3 +359,5 @@ def analyze_enrichment(prefix,  workdir,  analyze_day, refdir = '/cellar/users/m
     # sort_new_df = new_df.sort_values(by=["Method", 'Percent Edge Cutoff','MaxRes', 'Presistent threshold'])
     sort_new_df.to_csv(workdir + prefix+ 'hidef_enrichment_analysis.csv')
     return sort_new_df 
+
+
