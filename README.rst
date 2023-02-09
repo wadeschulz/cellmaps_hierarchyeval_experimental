@@ -115,8 +115,8 @@ Evaluate hierarchy from HiDeF
 
 Check the [Notebook](./HiDeF_Hierarchy_eval_pipeline.ipynb) for the cleaned pipeline to run the evaluation analysis 
 
-Step 0:
-^^^^^^^^^^^^^^
+Step 0
+~~~~~~~~~
 
 Use [hidef_finder.py](https://github.com/fanzheng10/HiDeF/blob/master/hidef/hidef_finder.py) from HiDeF repo to generate the hierarchical structures from protein interaction networks. 
 
@@ -128,7 +128,7 @@ Use [hidef_finder.py](https://github.com/fanzheng10/HiDeF/blob/master/hidef/hide
 where k is the stability, maxres is the maximum resolution, alg is the community detection algorithm. Other parameters in HiDeF can also be tuned check out the paper for details: Zheng, F., Zhang, S., Churas, C. et al., HiDeF: identifying persistent structures in multiscale ‘omics data. Genome Biol 22, 21 (2021).
 
 Step 1
-^^^^^^^
+~~~~~~~
 
 **Run analyze hidef enrichment**
 
@@ -149,8 +149,8 @@ PARAM:
 --FDRthre: cutoff of FDR, default is 0.01
 
 
-Step 2:
-^^^^^^^^
+Step 2
+~~~~~~~~
 
 **Organize hidef enrichment into a single table**
 
