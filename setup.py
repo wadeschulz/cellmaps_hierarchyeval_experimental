@@ -25,7 +25,8 @@ requirements = ['pandas',
                 'seaborn',
                 'tqdm',
                 'statsmodels',
-                'cellmaps_utils']
+                'cellmaps_utils',
+                'hidef']
 
 setup_requirements = [ ]
 
