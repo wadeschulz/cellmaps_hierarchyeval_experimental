@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 from collections import defaultdict
+import argparse
 
 ### One step making ontology from the hidef Hierarchy 
 ## make a long table of (parent, child, edgetype)
