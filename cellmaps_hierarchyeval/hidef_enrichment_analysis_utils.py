@@ -73,7 +73,9 @@ def enrich_small_large(enrich_type, df, ref_ts, known_comp = None, large = 80, f
         pvalues = str(row[f'hypergeom_{enrich_type}_adjPvalues']).split('; ')
         jaccard_indexes = str(row[f'{enrich_type}_ji_indexes']).split('; ')
         hypergeom_terms = str(row[f'hypergeom_{enrich_type}_terms']).split('; ')
-        for i in range(len(pvalues) - 1):
+        for i in range(len(pvalues)):
+            if len(pvalues[i]) < 1:
+                continue
             term_term_mapping.append((index, pvalues[i], hypergeom_terms[i], jaccard_indexes[i]))
 
     term_term_mapping = pd.DataFrame(term_term_mapping, columns=['term','pval', 'gs_term', 'ji'])
@@ -130,7 +132,9 @@ def enrich_GS(enrich_type, df, known_comp, fdr = 0.01, ji = 0.2):
             pvalues = str(row[f'hypergeom_{enrich_type}_adjPvalues']).split('; ')
             jaccard_indexes = str(row[f'{enrich_type}_ji_indexes']).split('; ')
             hypergeom_terms = str(row[f'hypergeom_{enrich_type}_terms']).split('; ')
-            for i in range(len(pvalues) - 1):
+            for i in range(len(pvalues)):
+                if len(pvalues[i]) < 1:
+                    continue
                 term_term_mapping.append((index, pvalues[i], hypergeom_terms[i], jaccard_indexes[i]))
 
         term_term_mapping = pd.DataFrame(term_term_mapping, columns=['term','pval', 'gs_term', 'ji'])
@@ -161,7 +165,9 @@ def enrich_eval(enrich_type, df, fdr = 0.01, ji = 0.2):
             pvalues = str(row[f'hypergeom_{enrich_type}_adjPvalues']).split('; ')
             jaccard_indexes = str(row[f'{enrich_type}_ji_indexes']).split('; ')
             hypergeom_terms = str(row[f'hypergeom_{enrich_type}_terms']).split('; ')
-            for i in range(len(pvalues) - 1):
+            for i in range(len(pvalues)):
+                if len(pvalues[i]) < 1:
+                    continue
                 term_term_mapping.append((index, pvalues[i], hypergeom_terms[i], jaccard_indexes[i]))
 
         term_term_mapping = pd.DataFrame(term_term_mapping, columns=['term','pval', 'gs_term', 'ji'])
