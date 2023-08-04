@@ -13,9 +13,6 @@ from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
 logger = logging.getLogger(__name__)
 
 
-LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
-             "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
-
 HIERARCHYDIR = '--hierarchy_dir'
 
 
@@ -55,29 +52,6 @@ def _parse_arguments(desc, args):
                                  cellmaps_hierarchyeval.__version__))
 
     return parser.parse_args(args)
-
-
-def _setup_logging(args):
-    """
-    Sets up logging based on parsed command line arguments.
-    If args.logconf is set use that configuration otherwise look
-    at args.verbose and set logging for this module
-
-    :param args: parsed command line arguments from argparse
-    :raises AttributeError: If args is None or args.logconf is None
-    :return: None
-    """
-
-    if args.logconf is None:
-        level = (50 - (10 * args.verbose))
-        logging.basicConfig(format=LOG_FORMAT,
-                            level=level)
-        logger.setLevel(level)
-        return
-
-    # logconf was set use that file
-    logging.config.fileConfig(args.logconf,
-                              disable_existing_loggers=False)
 
 
 def main(args):

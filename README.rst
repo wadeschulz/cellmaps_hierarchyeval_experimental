@@ -1,6 +1,6 @@
-======================
-cellmaps_hierarchyeval
-======================
+===============================
+Cell Maps Hierarchy Evaluation
+===============================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_hierarchyeval.svg
@@ -22,17 +22,19 @@ evaluate hidef hierarchy
 * Free software: MIT license
 * Documentation: https://cellmaps-hierarchyeval.readthedocs.io.
 
-
-
 Dependencies
 ------------
 
-* TODO add
+* `cellmaps_utils <https://pypi.org/project/cellmaps-utils>`__
+* `tqdm <https://pypi.org/project/tqdm>`__
+* `pandas <https://pypi.org/project/pandas>`__
+* `numpy <https://pypi.org/project/numpy>`__
+* `ndex2 <https://pypi.org/project/ndex2>`__
 
 Compatibility
 -------------
 
-* Python 3.3+
+* Python 3.8+
 
 Installation
 ------------

@@ -15,8 +15,8 @@ import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 
 
-
 logger = logging.getLogger(__name__)
+
 
 NDEX_UUID = {
     'HPA': 'a6a88e2d-9c0f-11ed-9a1f-005056ae23aa',
@@ -41,6 +41,7 @@ class EnrichmentTerms(object):
         self.terms = None
         self.term_genes = None
         self.term_description = None
+
 
 class GO_EnrichmentTerms(EnrichmentTerms):
     def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
@@ -91,6 +92,7 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
             term_genes_dict[term] = genes
         return term_genes_dict
 
+
 class HPA_EnrichmentTerms(EnrichmentTerms):
     def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
                  ):
@@ -114,9 +116,8 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
                     else:
                         term_genes_dict[c] = [node_name]
         return term_genes_dict
- 
 
-    
+
 class EncirhmentResult(object):
     """
     Base class for generating hierarchy
@@ -150,7 +151,8 @@ class EncirhmentResult(object):
 
     def set_description(self, description):
         self.description = description
-        
+
+
 class CellmapshierarchyevalRunner(object):
     """
     Class to run algorithm
@@ -190,7 +192,6 @@ class CellmapshierarchyevalRunner(object):
         self._organization_name = organization_name
         self._input_data_dict = input_data_dict
         self._provenance_utils = provenance_utils
-
         
     def _get_hierarchy_file(self):
         """
