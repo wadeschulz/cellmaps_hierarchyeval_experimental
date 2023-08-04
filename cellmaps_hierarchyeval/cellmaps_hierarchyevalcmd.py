@@ -4,7 +4,9 @@ import argparse
 import sys
 import logging
 import logging.config
-
+from cellmaps_utils import logutils
+from cellmaps_utils import constants
+from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
 
@@ -14,15 +16,7 @@ logger = logging.getLogger(__name__)
 LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
              "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
 
-
-class Formatter(argparse.ArgumentDefaultsHelpFormatter,
-                argparse.RawDescriptionHelpFormatter):
-    """
-    Combine two Formatters to get help and default values
-    displayed when showing help
-
-    """
-    pass
+HIERARCHYDIR = '--hierarchy_dir'
 
 
 def _parse_arguments(desc, args):
@@ -37,7 +31,10 @@ def _parse_arguments(desc, args):
     :rtype: :py:class:`argparse.Namespace`
     """
     parser = argparse.ArgumentParser(description=desc,
-                                     formatter_class=Formatter)
+                                     formatter_class=constants.ArgParseFormatter)
+    parser.add_argument('outdir', help='Output directory')
+    parser.add_argument(HIERARCHYDIR, required=True,
+                        help='Directory where hierarchy was generated')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -96,17 +93,20 @@ def main(args):
     """
     desc = """
     Version {version}
+    Takes a HiDeF {hierarchy_file} file from {hierarchy_dir} and runs enrichment tests for GO, CORUM, and HPA terms. 
 
-    Invokes run() method on CellmapshierarchyevalRunner
-
-    """.format(version=cellmaps_hierarchyeval.__version__)
+    """.format(version=cellmaps_hierarchyeval.__version__,
+               hierarchy_file=constants.HIERARCHY_NETWORK_PREFIX,
+               hierarchy_dir=HIERARCHYDIR)
+    
     theargs = _parse_arguments(desc, args[1:])
     theargs.program = args[0]
     theargs.version = cellmaps_hierarchyeval.__version__
-
     try:
-        _setup_logging(theargs)
-        return CellmapshierarchyevalRunner(theargs.exitcode).run()
+        logutils.setup_cmd_logging(theargs)  
+        return CellmapshierarchyevalRunner(outdir=theargs.outdir,
+                                         hierarchy_dir=theargs.hierarchy_dir,
+                                         input_data_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2
