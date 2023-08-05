@@ -155,13 +155,14 @@ class EncirhmentResult(object):
 
 class CellmapshierarchyevalRunner(object):
     """
-    Class to run algorithm
+    Class to run Hierarchy evaluation
+
     """
     def __init__(self, outdir=None, 
                  hierarchy_dir=None,
-                 min_comp_size = 4,
-                 max_fdr = 0.05,
-                 min_jaccard_index = 0.1,
+                 min_comp_size=4,
+                 max_fdr=0.05,
+                 min_jaccard_index=0.1,
                  name=None,
                  organization_name=None,
                  project_name=None,
@@ -170,13 +171,26 @@ class CellmapshierarchyevalRunner(object):
         """
         Constructor
 
-        :param outdir: Directory to create and put results in
-        :type outdir: str
-        :param hierarchy_dir: Output directory from cellmaps_generate_hierarchy 
+        :param outdir:
+        :param hierarchy_dir: Output directory from cellmaps_generate_hierarchy
+        :type hierarchy_dir: str
+        :param min_comp_size:
+        :type min_comp_size: int
+        :param max_fdr:
+        :type max_fdr: float
+        :param min_jaccard_index:
+        :type min_jaccard_index: float
         :param name:
+        :type name: str
         :param organization_name:
+        :type organization_name: str
         :param project_name:
-        :param provenance_utils:
+        :type project_name: str
+        :param input_data_dict: Command line parameters
+        :type input_data_dict: dict
+        :param provenance_utils: ProvenanceUtil object to use for
+                                 FAIRSCAPE registration
+        :type provenance_utils: py:class:`cellmaps_utils.provenance.ProvenanceUtil`
         """
         logger.debug('In constructor')
         if outdir is None:
@@ -192,14 +206,6 @@ class CellmapshierarchyevalRunner(object):
         self._organization_name = organization_name
         self._input_data_dict = input_data_dict
         self._provenance_utils = provenance_utils
-        
-    def _get_hierarchy_file(self):
-        """
-
-        :return:
-        """
-        return os.path.join(self._hierarchy_dir,
-                            constants.HIERARCHY_NETWORK_PREFIX)
     
     def _term_enrichment_hierarchy(self, hierarchy):
             
@@ -225,7 +231,7 @@ class CellmapshierarchyevalRunner(object):
         
         term_name = 'HPA'
         uuid = NDEX_UUID[term_name]
-        terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
+        terms_cx = ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
         terms = HPA_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
         enrichment_results = self._enrichment_test(hierarchy_cx, terms, M)
         self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
@@ -337,7 +343,7 @@ class CellmapshierarchyevalRunner(object):
                                                                     description=cellmaps_hierarchyeval.__description__,
                                                                     author=cellmaps_hierarchyeval.__author__,
                                                                     version=cellmaps_hierarchyeval.__version__,
-                                                                    file_format='.py',
+                                                                    file_format='py',
                                                                     url=cellmaps_hierarchyeval.__repo_url__)
 
     def _register_computation(self, generated_dataset_ids=[]):
@@ -356,9 +362,7 @@ class CellmapshierarchyevalRunner(object):
                                                     used_dataset=[input_dataset_id],
                                                     generated=generated_dataset_ids)
 
-        
-        
-    def _write_and_register_annotated_hierarchy_as_nodelist(self, hierarchy, dest_path=None):
+    def _write_and_register_annotated_hierarchy_as_nodelist(self, hierarchy):
         """
         Writes out **hierarchy** passed in as node list file
 
@@ -368,7 +372,7 @@ class CellmapshierarchyevalRunner(object):
         :rtype: tuple
         """
         logger.debug('Writing hierarchy nodelist')
-        dest_path = os.path.join(self._outdir, constants.HIERARCHY_NODES_PREFIX)
+        dest_path = self.get_annotated_hierarchy_as_nodelist_dest_file()
 
         # write node list to filesystem
         with open(dest_path, 'w') as f:
@@ -397,9 +401,7 @@ class CellmapshierarchyevalRunner(object):
                                                              source_file=dest_path,
                                                              data_dict=data_dict)
         return dataset_id
-        
-        
-        
+
     def _write_and_register_annotated_hierarchy(self, hierarchy):
         """
 
@@ -407,7 +409,7 @@ class CellmapshierarchyevalRunner(object):
         :return:
         """
         logger.debug('Writing hierarchy')
-        hierarchy_out_file = self.get_annotated_hierarchy_dest_file(hierarchy) + constants.CX_SUFFIX
+        hierarchy_out_file = self.get_annotated_hierarchy_dest_file()
         with open(hierarchy_out_file, 'w') as f:
             json.dump(hierarchy.to_cx(), f)
             # register ppi network file with fairscape
@@ -421,9 +423,8 @@ class CellmapshierarchyevalRunner(object):
                                                                  source_file=hierarchy_out_file,
                                                                  data_dict=data_dict)
         return dataset_id
-        
 
-    def get_annotated_hierarchy_dest_file(self, hierarchy):
+    def get_annotated_hierarchy_dest_file(self):
         """
         Creates file path prefix for hierarchy
 
@@ -434,9 +435,10 @@ class CellmapshierarchyevalRunner(object):
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
-        return os.path.join(self._outdir, constants.HIERARCHY_NETWORK_PREFIX)
+        return os.path.join(self._outdir, constants.HIERARCHY_NETWORK_PREFIX +
+                            constants.CX_SUFFIX)
     
-    def get_annotated_hierarchy_as_nodelist_dest_file(self, hierarchy):
+    def get_annotated_hierarchy_as_nodelist_dest_file(self):
         """
         Creates file path prefix for hierarchy
 
@@ -447,7 +449,7 @@ class CellmapshierarchyevalRunner(object):
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
-        return os.path.join(self._outdir, constants.HIERARCHY_NODES_PREFIX)
+        return os.path.join(self._outdir, constants.HIERARCHY_NODES_FILE)
     
     def get_hierarchy_input_file(self):
         """
@@ -460,7 +462,9 @@ class CellmapshierarchyevalRunner(object):
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
-        return os.path.join(self._hierarchy_dir, constants.HIERARCHY_NETWORK_PREFIX)
+        return os.path.join(self._hierarchy_dir,
+                            constants.HIERARCHY_NETWORK_PREFIX +
+                            constants.CX_SUFFIX)
     
     def run(self):
         """
@@ -491,7 +495,7 @@ class CellmapshierarchyevalRunner(object):
             generated_dataset_ids = []
 
             # annotate hierarchy
-            hierarchy = self.get_hierarchy_input_file() + constants.CX_SUFFIX
+            hierarchy = self.get_hierarchy_input_file()
             hierarchy = self._term_enrichment_hierarchy(hierarchy)
 
             # write out annotated hierarchy

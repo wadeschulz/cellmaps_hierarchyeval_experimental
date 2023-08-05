@@ -11,7 +11,7 @@ import unittest
 from cellmaps_hierarchyeval import cellmaps_hierarchyevalcmd
 
 
-class TestCellmaps_hierarchyeval(unittest.TestCase):
+class TestCellmapshierarchyeval(unittest.TestCase):
     """Tests for `cellmaps_hierarchyeval` package."""
 
     def setUp(self):
@@ -22,65 +22,25 @@ class TestCellmaps_hierarchyeval(unittest.TestCase):
 
     def test_parse_arguments(self):
         """Tests parse arguments"""
-        res = cellmaps_hierarchyevalcmd._parse_arguments('hi', [])
+        res = cellmaps_hierarchyevalcmd._parse_arguments('hi',
+                                                         ['outdir',
+                                                          cellmaps_hierarchyevalcmd.HIERARCHYDIR,
+                                                          'foox'])
 
         self.assertEqual(res.verbose, 0)
-        self.assertEqual(res.exitcode, 0)
         self.assertEqual(res.logconf, None)
+        self.assertEqual(res.outdir, 'outdir')
+        self.assertEqual(res.hierarchy_dir, 'foox')
 
-        someargs = ['-vv', '--logconf', 'hi', '--exitcode', '3']
+        someargs = ['-vv', '--logconf', 'hi', 'resdir',
+                    cellmaps_hierarchyevalcmd.HIERARCHYDIR,
+                    'foo']
         res = cellmaps_hierarchyevalcmd._parse_arguments('hi', someargs)
 
         self.assertEqual(res.verbose, 2)
         self.assertEqual(res.logconf, 'hi')
-        self.assertEqual(res.exitcode, 3)
-
-    def test_setup_logging(self):
-        """ Tests logging setup"""
-        try:
-            cellmaps_hierarchyevalcmd._setup_logging(None)
-            self.fail('Expected AttributeError')
-        except AttributeError:
-            pass
-
-        # args.logconf is None
-        res = cellmaps_hierarchyevalcmd._parse_arguments('hi', [])
-        cellmaps_hierarchyevalcmd._setup_logging(res)
-
-        # args.logconf set to a file
-        try:
-            temp_dir = tempfile.mkdtemp()
-
-            logfile = os.path.join(temp_dir, 'log.conf')
-            with open(logfile, 'w') as f:
-                f.write("""[loggers]
-keys=root
-
-[handlers]
-keys=stream_handler
-
-[formatters]
-keys=formatter
-
-[logger_root]
-level=DEBUG
-handlers=stream_handler
-
-[handler_stream_handler]
-class=StreamHandler
-level=DEBUG
-formatter=formatter
-args=(sys.stderr,)
-
-[formatter_formatter]
-format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
-
-            res = cellmaps_hierarchyevalcmd._parse_arguments('hi', ['--logconf',
-                                                                       logfile])
-            cellmaps_hierarchyevalcmd._setup_logging(res)
-
-        finally:
-            shutil.rmtree(temp_dir)
+        self.assertEqual(res.hierarchy_dir, 'foo')
+        self.assertEqual(res.outdir, 'resdir')
 
     def test_main(self):
         """Tests main function"""
@@ -88,7 +48,10 @@ format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
         # try where loading config is successful
         try:
             temp_dir = tempfile.mkdtemp()
-            res = cellmaps_hierarchyevalcmd.main(['myprog.py'])
-            self.assertEqual(res, 0)
+            res = cellmaps_hierarchyevalcmd.main(['myprog.py',
+                                                  'outdir',
+                                                  cellmaps_hierarchyevalcmd.HIERARCHYDIR,
+                                                  'foox'])
+            self.assertEqual(res, 2)
         finally:
             shutil.rmtree(temp_dir)
