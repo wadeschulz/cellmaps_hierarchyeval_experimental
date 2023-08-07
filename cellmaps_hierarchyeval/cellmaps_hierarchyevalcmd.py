@@ -32,6 +32,12 @@ def _parse_arguments(desc, args):
     parser.add_argument('outdir', help='Output directory')
     parser.add_argument(HIERARCHYDIR, required=True,
                         help='Directory where hierarchy was generated')
+    parser.add_argument('--max_fdr', type=float, default='0.05',
+                        help='Maximum false discovery rate')
+    parser.add_argument('--min_jaccard_index', type=float, default=0.1,
+                        help='Minimum jaccard index')
+    parser.add_argument('--min_comp_size', type=int, default=4,
+                        help='Minimum enrichment overlap comparison size')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -77,8 +83,9 @@ def main(args):
     try:
         logutils.setup_cmd_logging(theargs)  
         return CellmapshierarchyevalRunner(outdir=theargs.outdir,
-                                           max_fdr=1.0,
-                                           min_jaccard_index=1.0,
+                                           max_fdr=theargs.max_fdr,
+                                           min_jaccard_index=theargs.min_jaccard_index,
+                                           min_comp_size=theargs.min_comp_size,
                                            hierarchy_dir=theargs.hierarchy_dir,
                                            input_data_dict=theargs.__dict__).run()
     except Exception as e:
