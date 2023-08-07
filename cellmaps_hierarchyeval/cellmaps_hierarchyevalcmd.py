@@ -37,7 +37,7 @@ def _parse_arguments(desc, args):
     parser.add_argument('--min_jaccard_index', type=float, default=0.1,
                         help='Minimum jaccard index')
     parser.add_argument('--min_comp_size', type=int, default=4,
-                        help='Minimum enrichment overlap comparison size')
+                        help='Minimum term size to consider for enrichment')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
