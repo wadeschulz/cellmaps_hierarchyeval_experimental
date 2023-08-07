@@ -26,8 +26,9 @@ Dependencies
 ------------
 
 * `cellmaps_utils <https://pypi.org/project/cellmaps-utils>`__
+* `statsmodels <https://pypi.org/project/statsmodels>`__
 * `tqdm <https://pypi.org/project/tqdm>`__
-* `pandas <https://pypi.org/project/pandas>`__
+* `scipy <https://pypi.org/project/scipy>`__
 * `numpy <https://pypi.org/project/numpy>`__
 * `ndex2 <https://pypi.org/project/ndex2>`__
 
@@ -129,58 +130,6 @@ Via Docker
 .. code-block::
 
    docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_hierarchyeval:0.1.0 cellmaps_hierarchyevalcmd.py # TODO Add other needed arguments here
-
-
-
-Step by Step Guide for HiDeF hierarchy evaluation
---------------------------------------------------
-Evaluate hierarchy from HiDeF 
-
-Check the [Notebook](./HiDeF_Hierarchy_eval_pipeline.ipynb) for the cleaned pipeline to run the evaluation analysis 
-
-Step 0
-~~~~~~~~~
-
-Use [hidef_finder.py](https://github.com/fanzheng10/HiDeF/blob/master/hidef/hidef_finder.py) from HiDeF repo to generate the hierarchical structures from protein interaction networks. 
-
-.. code-block::
-
-   python -u <Function PATH>/hidef_finder.py --g < PATH one input network or list of input networks > --k 5 --maxres 40 --alg leiden --o <OUTPATH>
-
-
-where k is the stability, maxres is the maximum resolution, alg is the community detection algorithm. Other parameters in HiDeF can also be tuned check out the paper for details: Zheng, F., Zhang, S., Churas, C. et al., HiDeF: identifying persistent structures in multiscale ‘omics data. Genome Biol 22, 21 (2021).
-
-Step 1
-~~~~~~~
-
-**Run analyze hidef enrichment**
-
-.. code-block::
-
-   python -u ./U2OS5183_analyze_hidef_enrichment.py $PARAM
-
-PARAM: 
-
---infname: input path and the prefix of HiDeF nodes and edges 
-
---outprefix: output path and prefix 
-
---w_root: default noRoot (do remove the root from the enrichment analysis)
-
---minTermSize: minimum size of the term to consider when running enrichment (default = 4)
-
---FDRthre: cutoff of FDR, default is 0.01
-
-
-Step 2
-~~~~~~~~
-
-**Organize hidef enrichment into a single table**
-
-Use function 'analyze_enrichment' in the utils file [hidef_enrichment_analysis_utils.py](hidef_enrichment_analysis_utils.py)
-
-Check the [Notebook](./HiDeF_Hierarchy_eval_pipeline.ipynb) for the cleaned pipeline to run the evaluation analysis 
-
 
 
 Credits
