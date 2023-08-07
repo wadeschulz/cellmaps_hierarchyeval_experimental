@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 NDEX_UUID = {
     'HPA': 'a6a88e2d-9c0f-11ed-9a1f-005056ae23aa',
-    'CORUM' : '764f7471-9b79-11ed-9a1f-005056ae23aa',
-    'GO_CC' : 'f484e8ee-0b0f-11ee-aa50-005056ae23aa'}
+    'CORUM': '764f7471-9b79-11ed-9a1f-005056ae23aa',
+    'GO_CC': 'f484e8ee-0b0f-11ee-aa50-005056ae23aa'}
 
 
 class EnrichmentTerms(object):
@@ -29,8 +29,8 @@ class EnrichmentTerms(object):
     Base class for implementations that generate
     term databases for enrichment (i.e., HPA, CORUM, GO)
     """
-    def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
-                 ):
+    def __init__(self, terms=None, term_name=None,
+                 hierarchy_genes=None, min_comp_size=4):
         """
         Constructor
         """
@@ -44,9 +44,11 @@ class EnrichmentTerms(object):
 
 
 class GO_EnrichmentTerms(EnrichmentTerms):
-    def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
-                 ):
-        super().__init__(terms=terms, term_name = term_name, hierarchy_genes = hierarchy_genes, min_comp_size=min_comp_size)
+    def __init__(self, terms=None, term_name=None,
+                 hierarchy_genes=None, min_comp_size=4):
+        super().__init__(terms=terms, term_name=term_name,
+                         hierarchy_genes=hierarchy_genes,
+                         min_comp_size=min_comp_size)
         self.term_genes = self._get_term_genes(terms)
         self.term_description = self._get_term_description(terms)
 
@@ -54,7 +56,7 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         term_genes_dict = {}
         for id, node in terms.get_nodes():
             term = node.get('n')
-            genes =  terms.get_node_attribute_value(node, 'genes')
+            genes = terms.get_node_attribute_value(node, 'genes')
             if genes is None:
                 continue
             genes = genes.split(',')
@@ -68,16 +70,19 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         term_description = {}
         for id, node in terms.get_nodes():
             term = node.get('n')
-            term_description[term] = terms.get_node_attribute_value(node, 'description')
+            term_description[term] = terms.get_node_attribute_value(node,
+                                                                    'description')
         return term_description    
 
     
 class CORUM_EnrichmentTerms(EnrichmentTerms):
-    def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
-                 ):
-        super().__init__(terms=terms, term_name = term_name, hierarchy_genes = hierarchy_genes, min_comp_size=min_comp_size)
+    def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
+                 min_comp_size=4):
+        super().__init__(terms=terms, term_name=term_name,
+                         hierarchy_genes=hierarchy_genes,
+                         min_comp_size=min_comp_size)
         self.term_genes = self._get_term_genes(terms)
-        self.term_description =  None
+        self.term_description = None
         
     def _get_term_genes(self, terms):
         term_genes_dict = {}
@@ -94,11 +99,13 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
 
 
 class HPA_EnrichmentTerms(EnrichmentTerms):
-    def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
-                 ):
-        super().__init__(terms=terms, term_name = term_name, hierarchy_genes = hierarchy_genes, min_comp_size=min_comp_size)
+    def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
+                 min_comp_size=4):
+        super().__init__(terms=terms, term_name=term_name,
+                         hierarchy_genes=hierarchy_genes,
+                         min_comp_size=min_comp_size)
         self.term_genes = self._get_term_genes(terms)
-        self.term_description =  None
+        self.term_description = None
         
     def _get_term_genes(self, terms):
         term_genes_dict = {}
@@ -118,7 +125,7 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
         return term_genes_dict
 
 
-class EncirhmentResult(object):
+class EnrichmentResult(object):
     """
     Base class for generating hierarchy
     that is output in CX format following
@@ -127,8 +134,8 @@ class EncirhmentResult(object):
     def __init__(self,
                  term=None,
                  pval=None,
-                 jaccard_index = None,
-                 overlap_genes = None):
+                 jaccard_index=None,
+                 overlap_genes=None):
         """
         Constructor
         """
@@ -213,32 +220,38 @@ class CellmapshierarchyevalRunner(object):
         
         #get genes in hierarchy
         hierarchy_genes = self._get_hierarchy_genes(hierarchy_cx)
-        M = len(hierarchy_genes)
+        cap_m = len(hierarchy_genes)
         
         term_name = 'CORUM'
         uuid = NDEX_UUID[term_name]
-        terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
-        terms = CORUM_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, M)
+        terms_cx = ndex2.create_nice_cx_from_server('http://www.ndexbio.org',
+                                                    uuid=uuid)
+        terms = CORUM_EnrichmentTerms(terms_cx, term_name, hierarchy_genes,
+                                      self._min_comp_size)
+        enrichment_results = self._enrichment_test(hierarchy_cx, terms, cap_m)
         self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
         
         term_name = 'GO_CC'
         uuid = NDEX_UUID[term_name]
-        terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
-        terms = GO_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, M)
+        terms_cx = ndex2.create_nice_cx_from_server('http://www.ndexbio.org',
+                                                    uuid=uuid)
+        terms = GO_EnrichmentTerms(terms_cx, term_name, hierarchy_genes,
+                                   self._min_comp_size)
+        enrichment_results = self._enrichment_test(hierarchy_cx, terms, cap_m)
         self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
         
         term_name = 'HPA'
         uuid = NDEX_UUID[term_name]
-        terms_cx = ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
-        terms = HPA_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, M)
+        terms_cx = ndex2.create_nice_cx_from_server('http://www.ndexbio.org',
+                                                    uuid=uuid)
+        terms = HPA_EnrichmentTerms(terms_cx, term_name, hierarchy_genes,
+                                    self._min_comp_size)
+        enrichment_results = self._enrichment_test(hierarchy_cx, terms, cap_m)
         self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
         
         return hierarchy_cx
             
-    def _enrichment_test(self, hierarchy, terms, M):
+    def _enrichment_test(self, hierarchy, terms, cap_m):
         
         hierarchy_size = len(hierarchy.nodes)
         
@@ -260,12 +273,12 @@ class CellmapshierarchyevalRunner(object):
                 value = term_genes_dict[term]
 
                 term_genes = set(value)
-                N = len(term_genes)
+                cap_n = len(term_genes)
                 overlap_genes = list(node_genes.intersection(term_genes))
                 x = len(overlap_genes)
-                pval = hypergeom.sf(x - 1, M, n, N)
+                pval = hypergeom.sf(x - 1, cap_m, n, cap_n)
                 jaccard_index = len(overlap_genes) / len(node_genes.union(term_genes))
-                result = EncirhmentResult(term, pval, jaccard_index, overlap_genes)
+                result = EnrichmentResult(term, pval, jaccard_index, overlap_genes)
 
                 if terms.term_description is not None:
                     result.set_description(terms.term_description[term])
@@ -289,7 +302,7 @@ class CellmapshierarchyevalRunner(object):
         
         for hierarchy_index in np.arange(enrichment_results.shape[0]):
             node = hierarchy.get_node(hierarchy_index)
-            sorted_results  = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index, reverse=True)
+            sorted_results = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index, reverse=True)
             sorted_results_threshold = [x for x in sorted_results if x.accepted]
             hierarchy.set_node_attribute(node, '{}_terms'.format(terms.term_name), '|'.join([x.term for x in sorted_results_threshold]))
             if terms.term_description is not None:
@@ -391,7 +404,8 @@ class CellmapshierarchyevalRunner(object):
                 f.write('\n')
 
         # register node list file with fairscape
-        data_dict = {'name': os.path.basename(dest_path) + ' PPI edgelist file',
+        data_dict = {'name': os.path.basename(dest_path) +
+                     ' PPI edgelist file',
                      'description': 'Annotated Nodelist file',
                      'data-format': 'tsv',
                      'author': cellmaps_hierarchyeval.__name__,
@@ -413,7 +427,8 @@ class CellmapshierarchyevalRunner(object):
         with open(hierarchy_out_file, 'w') as f:
             json.dump(hierarchy.to_cx(), f)
             # register ppi network file with fairscape
-            data_dict = {'name': os.path.basename(hierarchy_out_file) + ' Hierarchy network file',
+            data_dict = {'name': os.path.basename(hierarchy_out_file) +
+                         ' Hierarchy network file',
                          'description': 'Hierarchy network file',
                          'data-format': 'CX',
                          'author': cellmaps_hierarchyeval.__name__,
@@ -484,7 +499,7 @@ class CellmapshierarchyevalRunner(object):
                 os.makedirs(self._outdir, mode=0o755)
 
             logutils.setup_filelogger(outdir=self._outdir,
-                                      handlerprefix='cellmaps_image_embedding')
+                                      handlerprefix='cellmaps_hierarchyeval')
             logutils.write_task_start_json(outdir=self._outdir,
                                            start_time=self._start_time,
                                            data={'commandlineargs': self._input_data_dict},
