@@ -15,13 +15,13 @@ import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 
 
-
 logger = logging.getLogger(__name__)
+
 
 NDEX_UUID = {
     'HPA': 'a6a88e2d-9c0f-11ed-9a1f-005056ae23aa',
-    'CORUM' : '764f7471-9b79-11ed-9a1f-005056ae23aa',
-    'GO_CC' : 'f484e8ee-0b0f-11ee-aa50-005056ae23aa'}
+    'CORUM': '764f7471-9b79-11ed-9a1f-005056ae23aa',
+    'GO_CC': 'f484e8ee-0b0f-11ee-aa50-005056ae23aa'}
 
 
 class EnrichmentTerms(object):
@@ -29,8 +29,8 @@ class EnrichmentTerms(object):
     Base class for implementations that generate
     term databases for enrichment (i.e., HPA, CORUM, GO)
     """
-    def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
-                 ):
+    def __init__(self, terms=None, term_name=None,
+                 hierarchy_genes=None, min_comp_size=4):
         """
         Constructor
         """
@@ -41,10 +41,13 @@ class EnrichmentTerms(object):
         self.term_genes = None
         self.term_description = None
 
+
 class GO_EnrichmentTerms(EnrichmentTerms):
-    def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
-                 ):
-        super().__init__(terms=terms, term_name = term_name, hierarchy_genes = hierarchy_genes, min_comp_size=min_comp_size)
+    def __init__(self, terms=None, term_name=None,
+                 hierarchy_genes=None, min_comp_size=4):
+        super().__init__(terms=terms, term_name=term_name,
+                         hierarchy_genes=hierarchy_genes,
+                         min_comp_size=min_comp_size)
         self.term_genes = self._get_term_genes(terms)
         self.term_description = self._get_term_description(terms)
 
@@ -52,7 +55,7 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         term_genes_dict = {}
         for id, node in terms.get_nodes():
             term = node.get('n')
-            genes =  terms.get_node_attribute_value(node, 'genes')
+            genes = terms.get_node_attribute_value(node, 'genes')
             if genes is None:
                 continue
             genes = genes.split(',')
@@ -66,16 +69,19 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         term_description = {}
         for id, node in terms.get_nodes():
             term = node.get('n')
-            term_description[term] = terms.get_node_attribute_value(node, 'description')
+            term_description[term] = terms.get_node_attribute_value(node,
+                                                                    'description')
         return term_description    
 
     
 class CORUM_EnrichmentTerms(EnrichmentTerms):
-    def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
-                 ):
-        super().__init__(terms=terms, term_name = term_name, hierarchy_genes = hierarchy_genes, min_comp_size=min_comp_size)
+    def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
+                 min_comp_size=4):
+        super().__init__(terms=terms, term_name=term_name,
+                         hierarchy_genes=hierarchy_genes,
+                         min_comp_size=min_comp_size)
         self.term_genes = self._get_term_genes(terms)
-        self.term_description =  None
+        self.term_description = None
         
     def _get_term_genes(self, terms):
         term_genes_dict = {}
@@ -90,12 +96,15 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
             term_genes_dict[term] = genes
         return term_genes_dict
 
+
 class HPA_EnrichmentTerms(EnrichmentTerms):
-    def __init__(self, terms=None, term_name=None, hierarchy_genes=None, min_comp_size=4
-                 ):
-        super().__init__(terms=terms, term_name = term_name, hierarchy_genes = hierarchy_genes, min_comp_size=min_comp_size)
+    def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
+                 min_comp_size=4):
+        super().__init__(terms=terms, term_name=term_name,
+                         hierarchy_genes=hierarchy_genes,
+                         min_comp_size=min_comp_size)
         self.term_genes = self._get_term_genes(terms)
-        self.term_description =  None
+        self.term_description = None
         
     def _get_term_genes(self, terms):
         term_genes_dict = {}
@@ -113,10 +122,9 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
                     else:
                         term_genes_dict[c] = [node_name]
         return term_genes_dict
- 
 
-    
-class EncirhmentResult(object):
+
+class EnrichmentResult(object):
     """
     Base class for generating hierarchy
     that is output in CX format following
@@ -125,8 +133,8 @@ class EncirhmentResult(object):
     def __init__(self,
                  term=None,
                  pval=None,
-                 jaccard_index = None,
-                 overlap_genes = None):
+                 jaccard_index=None,
+                 overlap_genes=None):
         """
         Constructor
         """
@@ -149,16 +157,18 @@ class EncirhmentResult(object):
 
     def set_description(self, description):
         self.description = description
-        
+
+
 class CellmapshierarchyevalRunner(object):
     """
-    Class to run algorithm
+    Class to run Hierarchy evaluation
+
     """
     def __init__(self, outdir=None, 
                  hierarchy_dir=None,
-                 min_comp_size = 4,
-                 max_fdr = 0.05,
-                 min_jaccard_index = 0.1,
+                 min_comp_size=4,
+                 max_fdr=0.05,
+                 min_jaccard_index=0.1,
                  name=None,
                  organization_name=None,
                  project_name=None,
@@ -167,13 +177,26 @@ class CellmapshierarchyevalRunner(object):
         """
         Constructor
 
-        :param outdir: Directory to create and put results in
-        :type outdir: str
-        :param hierarchy_dir: Output directory from cellmaps_generate_hierarchy 
+        :param outdir:
+        :param hierarchy_dir: Output directory from cellmaps_generate_hierarchy
+        :type hierarchy_dir: str
+        :param min_comp_size:
+        :type min_comp_size: int
+        :param max_fdr:
+        :type max_fdr: float
+        :param min_jaccard_index:
+        :type min_jaccard_index: float
         :param name:
+        :type name: str
         :param organization_name:
+        :type organization_name: str
         :param project_name:
-        :param provenance_utils:
+        :type project_name: str
+        :param input_data_dict: Command line parameters
+        :type input_data_dict: dict
+        :param provenance_utils: ProvenanceUtil object to use for
+                                 FAIRSCAPE registration
+        :type provenance_utils: py:class:`cellmaps_utils.provenance.ProvenanceUtil`
         """
         logger.debug('In constructor')
         if outdir is None:
@@ -189,15 +212,6 @@ class CellmapshierarchyevalRunner(object):
         self._organization_name = organization_name
         self._input_data_dict = input_data_dict
         self._provenance_utils = provenance_utils
-
-        
-    def _get_hierarchy_file(self):
-        """
-
-        :return:
-        """
-        return os.path.join(self._hierarchy_dir,
-                            constants.HIERARCHY_NETWORK_PREFIX)
     
     def _term_enrichment_hierarchy(self, hierarchy):
             
@@ -243,7 +257,7 @@ class CellmapshierarchyevalRunner(object):
         for genes in term_genes_dict.values():
             all_term_genes.update(genes)
         all_overlap_genes = list(set(hierarchy_genes).intersection(all_term_genes))
-        M = len(all_overlap_genes)
+        cap_m = len(all_overlap_genes)
         
         for hierarchy_index in np.arange(hierarchy_size):
 
@@ -258,12 +272,12 @@ class CellmapshierarchyevalRunner(object):
                 term = term_names[term_index]
                 value = term_genes_dict[term]
                 term_genes = set(value)
-                N = len(term_genes)
+                cap_n = len(term_genes)
                 overlap_genes = list(node_genes.intersection(term_genes))
                 x = len(overlap_genes)
-                pval = hypergeom.sf(x - 1, M, n, N)
+                pval = hypergeom.sf(x - 1, cap_m, n, cap_n)
                 jaccard_index = len(overlap_genes) / len(node_genes.union(term_genes))
-                result = EncirhmentResult(term, pval, jaccard_index, overlap_genes)
+                result = EnrichmentResult(term, pval, jaccard_index, overlap_genes)
 
                 if terms.term_description is not None:
                     result.set_description(terms.term_description[term])
@@ -287,7 +301,7 @@ class CellmapshierarchyevalRunner(object):
         
         for hierarchy_index in np.arange(enrichment_results.shape[0]):
             node = hierarchy.get_node(hierarchy_index)
-            sorted_results  = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index, reverse=True)
+            sorted_results = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index, reverse=True)
             sorted_results_threshold = [x for x in sorted_results if x.accepted]
             hierarchy.set_node_attribute(node, '{}_terms'.format(terms.term_name), '|'.join([x.term for x in sorted_results_threshold]))
             if terms.term_description is not None:
@@ -341,7 +355,7 @@ class CellmapshierarchyevalRunner(object):
                                                                     description=cellmaps_hierarchyeval.__description__,
                                                                     author=cellmaps_hierarchyeval.__author__,
                                                                     version=cellmaps_hierarchyeval.__version__,
-                                                                    file_format='.py',
+                                                                    file_format='py',
                                                                     url=cellmaps_hierarchyeval.__repo_url__)
 
     def _register_computation(self, generated_dataset_ids=[]):
@@ -360,9 +374,7 @@ class CellmapshierarchyevalRunner(object):
                                                     used_dataset=[input_dataset_id],
                                                     generated=generated_dataset_ids)
 
-        
-        
-    def _write_and_register_annotated_hierarchy_as_nodelist(self, hierarchy, dest_path=None):
+    def _write_and_register_annotated_hierarchy_as_nodelist(self, hierarchy):
         """
         Writes out **hierarchy** passed in as node list file
 
@@ -372,7 +384,7 @@ class CellmapshierarchyevalRunner(object):
         :rtype: tuple
         """
         logger.debug('Writing hierarchy nodelist')
-        dest_path = os.path.join(self._outdir, constants.HIERARCHY_NODES_PREFIX)
+        dest_path = self.get_annotated_hierarchy_as_nodelist_dest_file()
 
         # write node list to filesystem
         with open(dest_path, 'w') as f:
@@ -391,7 +403,8 @@ class CellmapshierarchyevalRunner(object):
                 f.write('\n')
 
         # register node list file with fairscape
-        data_dict = {'name': os.path.basename(dest_path) + ' PPI edgelist file',
+        data_dict = {'name': os.path.basename(dest_path) +
+                     ' PPI edgelist file',
                      'description': 'Annotated Nodelist file',
                      'data-format': 'tsv',
                      'author': cellmaps_hierarchyeval.__name__,
@@ -401,9 +414,7 @@ class CellmapshierarchyevalRunner(object):
                                                              source_file=dest_path,
                                                              data_dict=data_dict)
         return dataset_id
-        
-        
-        
+
     def _write_and_register_annotated_hierarchy(self, hierarchy):
         """
 
@@ -411,11 +422,12 @@ class CellmapshierarchyevalRunner(object):
         :return:
         """
         logger.debug('Writing hierarchy')
-        hierarchy_out_file = self.get_annotated_hierarchy_dest_file(hierarchy) + constants.CX_SUFFIX
+        hierarchy_out_file = self.get_annotated_hierarchy_dest_file()
         with open(hierarchy_out_file, 'w') as f:
             json.dump(hierarchy.to_cx(), f)
             # register ppi network file with fairscape
-            data_dict = {'name': os.path.basename(hierarchy_out_file) + ' Hierarchy network file',
+            data_dict = {'name': os.path.basename(hierarchy_out_file) +
+                         ' Hierarchy network file',
                          'description': 'Hierarchy network file',
                          'data-format': 'CX',
                          'author': cellmaps_hierarchyeval.__name__,
@@ -425,9 +437,8 @@ class CellmapshierarchyevalRunner(object):
                                                                  source_file=hierarchy_out_file,
                                                                  data_dict=data_dict)
         return dataset_id
-        
 
-    def get_annotated_hierarchy_dest_file(self, hierarchy):
+    def get_annotated_hierarchy_dest_file(self):
         """
         Creates file path prefix for hierarchy
 
@@ -438,9 +449,10 @@ class CellmapshierarchyevalRunner(object):
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
-        return os.path.join(self._outdir, constants.HIERARCHY_NETWORK_PREFIX)
+        return os.path.join(self._outdir, constants.HIERARCHY_NETWORK_PREFIX +
+                            constants.CX_SUFFIX)
     
-    def get_annotated_hierarchy_as_nodelist_dest_file(self, hierarchy):
+    def get_annotated_hierarchy_as_nodelist_dest_file(self):
         """
         Creates file path prefix for hierarchy
 
@@ -451,7 +463,7 @@ class CellmapshierarchyevalRunner(object):
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
-        return os.path.join(self._outdir, constants.HIERARCHY_NODES_PREFIX)
+        return os.path.join(self._outdir, constants.HIERARCHY_NODES_FILE)
     
     def get_hierarchy_input_file(self):
         """
@@ -464,7 +476,9 @@ class CellmapshierarchyevalRunner(object):
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
-        return os.path.join(self._hierarchy_dir, constants.HIERARCHY_NETWORK_PREFIX)
+        return os.path.join(self._hierarchy_dir,
+                            constants.HIERARCHY_NETWORK_PREFIX +
+                            constants.CX_SUFFIX)
     
     def run(self):
         """
@@ -484,7 +498,7 @@ class CellmapshierarchyevalRunner(object):
                 os.makedirs(self._outdir, mode=0o755)
 
             logutils.setup_filelogger(outdir=self._outdir,
-                                      handlerprefix='cellmaps_image_embedding')
+                                      handlerprefix='cellmaps_hierarchyeval')
             logutils.write_task_start_json(outdir=self._outdir,
                                            start_time=self._start_time,
                                            data={'commandlineargs': self._input_data_dict},
@@ -495,7 +509,7 @@ class CellmapshierarchyevalRunner(object):
             generated_dataset_ids = []
 
             # annotate hierarchy
-            hierarchy = self.get_hierarchy_input_file() + constants.CX_SUFFIX
+            hierarchy = self.get_hierarchy_input_file()
             hierarchy = self._term_enrichment_hierarchy(hierarchy)
 
             # write out annotated hierarchy

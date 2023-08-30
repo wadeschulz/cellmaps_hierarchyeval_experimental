@@ -8,11 +8,6 @@ Welcome to cellmaps_hierarchyeval's documentation!
 .. image:: https://img.shields.io/travis/idekerlab/cellmaps_hierarchyeval.svg
         :target: https://travis-ci.com/idekerlab/cellmaps_hierarchyeval
 
-.. image:: https://readthedocs.org/projects/cellmaps-hierarchyeval/badge/?version=latest
-        :target: https://cellmaps-hierarchyeval.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-
 
 
 evaluate hidef hierarchy 

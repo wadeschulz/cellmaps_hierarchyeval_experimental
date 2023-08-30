@@ -13,9 +13,6 @@ from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
 logger = logging.getLogger(__name__)
 
 
-LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
-             "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
-
 HIERARCHYDIR = '--hierarchy_dir'
 
 
@@ -35,14 +32,18 @@ def _parse_arguments(desc, args):
     parser.add_argument('outdir', help='Output directory')
     parser.add_argument(HIERARCHYDIR, required=True,
                         help='Directory where hierarchy was generated')
+    parser.add_argument('--max_fdr', type=float, default='0.05',
+                        help='Maximum false discovery rate')
+    parser.add_argument('--min_jaccard_index', type=float, default=0.1,
+                        help='Minimum jaccard index')
+    parser.add_argument('--min_comp_size', type=int, default=4,
+                        help='Minimum term size to consider for enrichment')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
                              'logging.config.html#logging-config-fileformat '
                              'Setting this overrides -v parameter which uses '
                              ' default logger. (default None)')
-    parser.add_argument('--exitcode', help='Exit code this command will return',
-                        default=0, type=int)
     parser.add_argument('--verbose', '-v', action='count', default=0,
                         help='Increases verbosity of logger to standard '
                              'error for log messages in this module. Messages are '
@@ -55,29 +56,6 @@ def _parse_arguments(desc, args):
                                  cellmaps_hierarchyeval.__version__))
 
     return parser.parse_args(args)
-
-
-def _setup_logging(args):
-    """
-    Sets up logging based on parsed command line arguments.
-    If args.logconf is set use that configuration otherwise look
-    at args.verbose and set logging for this module
-
-    :param args: parsed command line arguments from argparse
-    :raises AttributeError: If args is None or args.logconf is None
-    :return: None
-    """
-
-    if args.logconf is None:
-        level = (50 - (10 * args.verbose))
-        logging.basicConfig(format=LOG_FORMAT,
-                            level=level)
-        logger.setLevel(level)
-        return
-
-    # logconf was set use that file
-    logging.config.fileConfig(args.logconf,
-                              disable_existing_loggers=False)
 
 
 def main(args):
@@ -105,8 +83,11 @@ def main(args):
     try:
         logutils.setup_cmd_logging(theargs)  
         return CellmapshierarchyevalRunner(outdir=theargs.outdir,
-                                         hierarchy_dir=theargs.hierarchy_dir,
-                                         input_data_dict=theargs.__dict__).run()
+                                           max_fdr=theargs.max_fdr,
+                                           min_jaccard_index=theargs.min_jaccard_index,
+                                           min_comp_size=theargs.min_comp_size,
+                                           hierarchy_dir=theargs.hierarchy_dir,
+                                           input_data_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2
