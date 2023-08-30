@@ -38,7 +38,6 @@ class EnrichmentTerms(object):
         self.term_name = term_name
         self.hierarchy_genes = hierarchy_genes
         self.min_comp_size = min_comp_size
-        self.terms = None
         self.term_genes = None
         self.term_description = None
 
@@ -206,32 +205,31 @@ class CellmapshierarchyevalRunner(object):
         
         #get genes in hierarchy
         hierarchy_genes = self._get_hierarchy_genes(hierarchy_cx)
-        M = len(hierarchy_genes)
         
         term_name = 'CORUM'
         uuid = NDEX_UUID[term_name]
         terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
         terms = CORUM_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, M)
+        enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
         self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
         
         term_name = 'GO_CC'
         uuid = NDEX_UUID[term_name]
         terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
         terms = GO_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, M)
+        enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
         self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
         
         term_name = 'HPA'
         uuid = NDEX_UUID[term_name]
         terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
         terms = HPA_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, M)
+        enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
         self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
         
         return hierarchy_cx
             
-    def _enrichment_test(self, hierarchy, terms, M):
+    def _enrichment_test(self, hierarchy, terms, hierarchy_genes):
         
         hierarchy_size = len(hierarchy.nodes)
         
@@ -240,18 +238,25 @@ class CellmapshierarchyevalRunner(object):
         term_names = list(term_genes_dict.keys())
         enrichment_results = np.empty((hierarchy_size, term_size), dtype=object)
         
+        # get overlap genes
+        all_term_genes = set()
+        for genes in term_genes_dict.values():
+            all_term_genes.update(genes)
+        all_overlap_genes = list(set(hierarchy_genes).intersection(all_term_genes))
+        M = len(all_overlap_genes)
+        
         for hierarchy_index in np.arange(hierarchy_size):
 
             node = hierarchy.get_node(hierarchy_index)
             node_name = node['n']
-
             node_genes = set(hierarchy.get_node_attribute(node, 'CD_MemberList')['v'].split(' '))
+            # intersection with genes in the term
+            node_genes = set(node_genes).intersection(all_overlap_genes)
             n = len(node_genes)
 
             for term_index in np.arange(term_size):
                 term = term_names[term_index]
                 value = term_genes_dict[term]
-
                 term_genes = set(value)
                 N = len(term_genes)
                 overlap_genes = list(node_genes.intersection(term_genes))
