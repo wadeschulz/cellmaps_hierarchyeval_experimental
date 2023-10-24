@@ -5,8 +5,8 @@ Welcome to cellmaps_hierarchyeval's documentation!
 .. image:: https://img.shields.io/pypi/v/cellmaps_hierarchyeval.svg
         :target: https://pypi.python.org/pypi/cellmaps_hierarchyeval
 
-.. image:: https://img.shields.io/travis/idekerlab/cellmaps_hierarchyeval.svg
-        :target: https://travis-ci.com/idekerlab/cellmaps_hierarchyeval
+.. image:: https://app.travis-ci.com/idekerlab/cellmaps_hierarchyeval.svg?branch=main
+        :target: https://app.travis-ci.com/idekerlab/cellmaps_hierarchyeval
 
 
 
