@@ -56,6 +56,7 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
             outdir = os.path.join(temp_dir, 'outdir')
             runner = CellmapshierarchyevalRunner(outdir,
                                                  hierarchy_dir=hier_dir,
+                                                 skip_logging=False,
                                                  input_data_dict={})
             self.assertEqual(0, runner.run())
 

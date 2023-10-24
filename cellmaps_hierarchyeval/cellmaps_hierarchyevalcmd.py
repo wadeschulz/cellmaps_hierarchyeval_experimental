@@ -6,7 +6,6 @@ import logging
 import logging.config
 from cellmaps_utils import logutils
 from cellmaps_utils import constants
-from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
 
@@ -38,6 +37,9 @@ def _parse_arguments(desc, args):
                         help='Minimum jaccard index')
     parser.add_argument('--min_comp_size', type=int, default=4,
                         help='Minimum term size to consider for enrichment')
+    parser.add_argument('--skip_logging', action='store_true',
+                        help='If set, output.log, error.log '
+                             'files will not be created')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -87,6 +89,7 @@ def main(args):
                                            min_jaccard_index=theargs.min_jaccard_index,
                                            min_comp_size=theargs.min_comp_size,
                                            hierarchy_dir=theargs.hierarchy_dir,
+                                           skip_logging=theargs.skip_logging,
                                            input_data_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))

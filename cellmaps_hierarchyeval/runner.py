@@ -173,6 +173,7 @@ class CellmapshierarchyevalRunner(object):
                  organization_name=None,
                  project_name=None,
                  input_data_dict=None,
+                 skip_logging=True,
                  provenance_utils=ProvenanceUtil()):
         """
         Constructor
@@ -194,6 +195,8 @@ class CellmapshierarchyevalRunner(object):
         :type project_name: str
         :param input_data_dict: Command line parameters
         :type input_data_dict: dict
+        :param skip_logging: If ``True`` skip logging, if ``None`` or ``False`` do NOT skip logging
+        :type skip_logging: bool
         :param provenance_utils: ProvenanceUtil object to use for
                                  FAIRSCAPE registration
         :type provenance_utils: py:class:`cellmaps_utils.provenance.ProvenanceUtil`
@@ -211,6 +214,11 @@ class CellmapshierarchyevalRunner(object):
         self._project_name = project_name
         self._organization_name = organization_name
         self._input_data_dict = input_data_dict
+        if skip_logging is None:
+            self._skip_logging = False
+        else:
+            self._skip_logging = skip_logging
+
         self._provenance_utils = provenance_utils
     
     def _term_enrichment_hierarchy(self, hierarchy):
@@ -497,8 +505,9 @@ class CellmapshierarchyevalRunner(object):
             if not os.path.isdir(self._outdir):
                 os.makedirs(self._outdir, mode=0o755)
 
-            logutils.setup_filelogger(outdir=self._outdir,
-                                      handlerprefix='cellmaps_hierarchyeval')
+            if self._skip_logging is False:
+                logutils.setup_filelogger(outdir=self._outdir,
+                                          handlerprefix='cellmaps_hierarchyeval')
             logutils.write_task_start_json(outdir=self._outdir,
                                            start_time=self._start_time,
                                            data={'commandlineargs': self._input_data_dict},
