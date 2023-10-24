@@ -34,6 +34,5 @@ Via Docker
 
 .. code-block::
 
-   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_hierarchyeval:0.1.0 cellmaps_hierarchyevalcmd.py # TODO Add other needed arguments here
-
+   Coming soon...
 
