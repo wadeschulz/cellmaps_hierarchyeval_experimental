@@ -37,6 +37,14 @@ def _parse_arguments(desc, args):
                         help='Minimum jaccard index')
     parser.add_argument('--min_comp_size', type=int, default=4,
                         help='Minimum term size to consider for enrichment')
+    parser.add_argument('--corum', default='764f7471-9b79-11ed-9a1f-005056ae23aa',
+                        help='UUID for CORUM network')
+    parser.add_argument('--go_cc', default='f484e8ee-0b0f-11ee-aa50-005056ae23aa',
+                        help='UUID for GO-CC network')
+    parser.add_argument('--hpa', default='a6a88e2d-9c0f-11ed-9a1f-005056ae23aa',
+                        help='UUID for HPA network')
+    parser.add_argument('--ndex_server', default='http://www.ndexbio.org',
+                        help='NDEx server to use')
     parser.add_argument('--skip_logging', action='store_true',
                         help='If set, output.log, error.log '
                              'files will not be created')
@@ -73,21 +81,25 @@ def main(args):
     """
     desc = """
     Version {version}
-    Takes a HiDeF {hierarchy_file} file from {hierarchy_dir} and runs enrichment tests for GO, CORUM, and HPA terms. 
+    Takes a HiDeF {hierarchy_file} file from {hierarchy_dir} and runs enrichment tests for GO, CORUM, and HPA terms.
 
     """.format(version=cellmaps_hierarchyeval.__version__,
                hierarchy_file=constants.HIERARCHY_NETWORK_PREFIX,
                hierarchy_dir=HIERARCHYDIR)
-    
+
     theargs = _parse_arguments(desc, args[1:])
     theargs.program = args[0]
     theargs.version = cellmaps_hierarchyeval.__version__
     try:
-        logutils.setup_cmd_logging(theargs)  
+        logutils.setup_cmd_logging(theargs)
         return CellmapshierarchyevalRunner(outdir=theargs.outdir,
                                            max_fdr=theargs.max_fdr,
                                            min_jaccard_index=theargs.min_jaccard_index,
                                            min_comp_size=theargs.min_comp_size,
+                                           corum=theargs.corum,
+                                           go_cc=theargs.go_cc,
+                                           hpa=theargs.hpa,
+                                           ndex_server=theargs.ndex_server,
                                            hierarchy_dir=theargs.hierarchy_dir,
                                            skip_logging=theargs.skip_logging,
                                            input_data_dict=theargs.__dict__).run()

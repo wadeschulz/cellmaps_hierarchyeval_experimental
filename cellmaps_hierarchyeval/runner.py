@@ -19,12 +19,6 @@ from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 logger = logging.getLogger(__name__)
 
 
-NDEX_UUID = {
-    'HPA': 'a6a88e2d-9c0f-11ed-9a1f-005056ae23aa',
-    'CORUM': '764f7471-9b79-11ed-9a1f-005056ae23aa',
-    'GO_CC': 'f484e8ee-0b0f-11ee-aa50-005056ae23aa'}
-
-
 class EnrichmentTerms(object):
     """
     Base class for implementations that generate
@@ -170,6 +164,10 @@ class CellmapshierarchyevalRunner(object):
                  min_comp_size=4,
                  max_fdr=0.05,
                  min_jaccard_index=0.1,
+                 corum='764f7471-9b79-11ed-9a1f-005056ae23aa',
+                 go_cc='f484e8ee-0b0f-11ee-aa50-005056ae23aa',
+                 hpa='a6a88e2d-9c0f-11ed-9a1f-005056ae23aa',
+                 ndex_server=None,
                  name=None,
                  organization_name=None,
                  project_name=None,
@@ -210,6 +208,10 @@ class CellmapshierarchyevalRunner(object):
         self._min_comp_size = min_comp_size
         self._max_fdr = max_fdr
         self._min_jaccard_index = min_jaccard_index
+        self._corum = corum
+        self._go_cc = go_cc
+        self._hpa = hpa
+        self._ndex_server = ndex_server
         self._start_time = int(time.time())
         self._name = name
         self._project_name = project_name
@@ -230,19 +232,18 @@ class CellmapshierarchyevalRunner(object):
         hierarchy_genes = self._get_hierarchy_genes(hierarchy_cx)
 
         term_definitions = [
-            ('CORUM', CORUM_EnrichmentTerms),
-            ('GO_CC', GO_EnrichmentTerms),
-            ('HPA', HPA_EnrichmentTerms)
+            ('CORUM', CORUM_EnrichmentTerms, self._corum),
+            ('GO_CC', GO_EnrichmentTerms, self._go_cc),
+            ('HPA', HPA_EnrichmentTerms, self._hpa)
         ]
 
-        for term_name, term_class in term_definitions:
-            self._process_term(term_name, term_class, hierarchy_cx, hierarchy_genes)
+        for term_name, term_class, term_uuid in term_definitions:
+            self._process_term(term_name, term_class, hierarchy_cx, hierarchy_genes, term_uuid)
 
         return hierarchy_cx
 
-    def _process_term(self, term_name, term_class, hierarchy_cx, hierarchy_genes):
-        uuid = NDEX_UUID[term_name]
-        terms_cx = ndex2.create_nice_cx_from_server('http://www.ndexbio.org', uuid=uuid)
+    def _process_term(self, term_name, term_class, hierarchy_cx, hierarchy_genes, uuid):
+        terms_cx = ndex2.create_nice_cx_from_server(self._ndex_server, uuid=uuid)
         terms = term_class(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
         # TODO: should it be skipped or exception should be raised?
         if len(terms.term_genes) == 0:
