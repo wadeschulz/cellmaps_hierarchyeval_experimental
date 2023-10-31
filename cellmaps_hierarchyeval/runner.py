@@ -15,7 +15,6 @@ from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,6 +23,7 @@ class EnrichmentTerms(object):
     Base class for implementations that generate
     term databases for enrichment (i.e., HPA, CORUM, GO)
     """
+
     def __init__(self, terms=None, term_name=None,
                  hierarchy_genes=None, min_comp_size=4):
         """
@@ -50,6 +50,7 @@ class GO_EnrichmentTerms(EnrichmentTerms):
     """
     This class extends the EnrichmentTerms class to handle terms specific to Gene Ontology (GO).
     """
+
     def __init__(self, terms=None, term_name=None,
                  hierarchy_genes=None, min_comp_size=4):
         """
@@ -114,6 +115,7 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
     """
     This class extends the EnrichmentTerms class to handle terms specific to CORUM.
     """
+
     def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
                  min_comp_size=4):
         """
@@ -160,6 +162,7 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
     """
     This class extends the EnrichmentTerms class to handle terms specific to the Human Protein Atlas (HPA).
     """
+
     def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
                  min_comp_size=4):
         super().__init__(terms=terms, term_name=term_name,
@@ -200,6 +203,7 @@ class EnrichmentResult(object):
     Base class for representing the results of enrichment analysis.
     It generates a hierarchy that is output in the CX format following the CDAPS style.
     """
+
     def __init__(self,
                  term=None,
                  pval=None,
@@ -262,6 +266,7 @@ class CellmapshierarchyevalRunner(object):
     """
     Class to run Hierarchy evaluation
     """
+
     def __init__(self, outdir=None,
                  hierarchy_dir=None,
                  min_comp_size=4,
@@ -382,9 +387,10 @@ class CellmapshierarchyevalRunner(object):
         if len(terms.term_genes) == 0:
             warnings.warn(f"Skipping {term_name} enrichment due to no genes present when "
                           f"min_comp_size set to {self._min_comp_size}")
-            return
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
-        self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
+            self._add_empty_attr_to_hierarchy(hierarchy_cx, terms)
+        else:
+            enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
+            self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
 
     def _enrichment_test(self, hierarchy, terms, hierarchy_genes):
         """
@@ -480,6 +486,23 @@ class CellmapshierarchyevalRunner(object):
                                          '|'.join([str(x.jaccard_index) for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node, '{}_overlap_genes'.format(terms.term_name),
                                          '|'.join([','.join(x.overlap_genes) for x in sorted_results_threshold]))
+
+    def _add_empty_attr_to_hierarchy(self, hierarchy, terms):
+        """
+        Adds empty attributes to nodes in the hierarchy for the given term.
+        This is used when no genes are present for enrichment of the specific term.
+
+        :param hierarchy: The hierarchy in CX format.
+        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :param terms: The terms for which empty attributes should be added.
+        :type terms:
+        """
+        for node_id, _ in hierarchy.get_nodes():
+            hierarchy.set_node_attribute(node_id, '{}_terms'.format(terms.term_name), "")
+            hierarchy.set_node_attribute(node_id, '{}_descriptions'.format(terms.term_name), "")
+            hierarchy.set_node_attribute(node_id, '{}_FDRs'.format(terms.term_name), "")
+            hierarchy.set_node_attribute(node_id, '{}_jaccard_indexes'.format(terms.term_name), "")
+            hierarchy.set_node_attribute(node_id, '{}_overlap_genes'.format(terms.term_name), "")
 
     def _get_hierarchy_genes(self, hierarchy_cx):
         """
@@ -587,7 +610,7 @@ class CellmapshierarchyevalRunner(object):
 
         # register node list file with fairscape
         data_dict = {'name': os.path.basename(dest_path) +
-                     ' PPI edgelist file',
+                             ' PPI edgelist file',
                      'description': 'Annotated Nodelist file',
                      'data-format': 'tsv',
                      'author': cellmaps_hierarchyeval.__name__,
@@ -613,7 +636,7 @@ class CellmapshierarchyevalRunner(object):
             json.dump(hierarchy.to_cx(), f)
             # register ppi network file with fairscape
             data_dict = {'name': os.path.basename(hierarchy_out_file) +
-                         ' Hierarchy network file',
+                                 ' Hierarchy network file',
                          'description': 'Hierarchy network file',
                          'data-format': 'CX',
                          'author': cellmaps_hierarchyeval.__name__,
