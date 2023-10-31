@@ -5,8 +5,9 @@ import time
 import json
 import numpy as np
 from datetime import date
-from scipy.stats import hypergeom 
+from scipy.stats import hypergeom
 from statsmodels.stats.multitest import multipletests
+import warnings
 import ndex2
 from cellmaps_utils import constants
 from cellmaps_utils import logutils
@@ -64,16 +65,16 @@ class GO_EnrichmentTerms(EnrichmentTerms):
                 continue
             term_genes_dict[term] = genes
         return term_genes_dict
-            
+
     def _get_term_description(self, terms):
         term_description = {}
         for id, node in terms.get_nodes():
             term = node.get('n')
             term_description[term] = terms.get_node_attribute_value(node,
                                                                     'description')
-        return term_description    
+        return term_description
 
-    
+
 class CORUM_EnrichmentTerms(EnrichmentTerms):
     def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
                  min_comp_size=4):
@@ -82,7 +83,7 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
                          min_comp_size=min_comp_size)
         self.term_genes = self._get_term_genes(terms)
         self.term_description = None
-        
+
     def _get_term_genes(self, terms):
         term_genes_dict = {}
         for id, node in terms.get_nodes():
@@ -105,7 +106,7 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
                          min_comp_size=min_comp_size)
         self.term_genes = self._get_term_genes(terms)
         self.term_description = None
-        
+
     def _get_term_genes(self, terms):
         term_genes_dict = {}
         for id, node in terms.get_nodes():
@@ -145,10 +146,10 @@ class EnrichmentResult(object):
         self.overlap_genes = overlap_genes
         self.adjusted_pval = None
         self.accepted = False
-        
+
     def set_adjusted_pval(self, adjusted_pval):
         self.adjusted_pval = adjusted_pval
-        
+
     def set_accepted(self, min_jaccard_index, max_fdr):
         if self.jaccard_index == 1:
             self.accepted = True
@@ -164,7 +165,7 @@ class CellmapshierarchyevalRunner(object):
     Class to run Hierarchy evaluation
 
     """
-    def __init__(self, outdir=None, 
+    def __init__(self, outdir=None,
                  hierarchy_dir=None,
                  min_comp_size=4,
                  max_fdr=0.05,
@@ -220,53 +221,53 @@ class CellmapshierarchyevalRunner(object):
             self._skip_logging = skip_logging
 
         self._provenance_utils = provenance_utils
-    
+
     def _term_enrichment_hierarchy(self, hierarchy):
-            
+
         hierarchy_cx = ndex2.create_nice_cx_from_file(hierarchy)
-        
-        #get genes in hierarchy
+
+        # get genes in hierarchy
         hierarchy_genes = self._get_hierarchy_genes(hierarchy_cx)
-        
-        term_name = 'CORUM'
-        uuid = NDEX_UUID[term_name]
-        terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
-        terms = CORUM_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
-        self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
-        
-        term_name = 'GO_CC'
-        uuid = NDEX_UUID[term_name]
-        terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
-        terms = GO_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
-        self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
-        
-        term_name = 'HPA'
-        uuid = NDEX_UUID[term_name]
-        terms_cx =  ndex2.create_nice_cx_from_server('http://www.ndexbio.org',uuid=uuid)
-        terms = HPA_EnrichmentTerms(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
-        enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
-        self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
-        
+
+        term_definitions = [
+            ('CORUM', CORUM_EnrichmentTerms),
+            ('GO_CC', GO_EnrichmentTerms),
+            ('HPA', HPA_EnrichmentTerms)
+        ]
+
+        for term_name, term_class in term_definitions:
+            self._process_term(term_name, term_class, hierarchy_cx, hierarchy_genes)
+
         return hierarchy_cx
-            
+
+    def _process_term(self, term_name, term_class, hierarchy_cx, hierarchy_genes):
+        uuid = NDEX_UUID[term_name]
+        terms_cx = ndex2.create_nice_cx_from_server('http://www.ndexbio.org', uuid=uuid)
+        terms = term_class(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
+        # TODO: should it be skipped or exception should be raised?
+        if len(terms.term_genes) == 0:
+            warnings.warn(f"Skipping {term_name} enrichment due to no genes present when "
+                          f"min_comp_size set to {self._min_comp_size}")
+            return
+        enrichment_results = self._enrichment_test(hierarchy_cx, terms, hierarchy_genes)
+        self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
+
     def _enrichment_test(self, hierarchy, terms, hierarchy_genes):
-        
+
         hierarchy_size = len(hierarchy.nodes)
-        
+
         term_genes_dict = terms.term_genes
         term_size = len(term_genes_dict)
         term_names = list(term_genes_dict.keys())
         enrichment_results = np.empty((hierarchy_size, term_size), dtype=object)
-        
+
         # get overlap genes
         all_term_genes = set()
         for genes in term_genes_dict.values():
             all_term_genes.update(genes)
         all_overlap_genes = list(set(hierarchy_genes).intersection(all_term_genes))
         cap_m = len(all_overlap_genes)
-        
+
         for hierarchy_index in np.arange(hierarchy_size):
 
             node = hierarchy.get_node(hierarchy_index)
@@ -292,9 +293,13 @@ class CellmapshierarchyevalRunner(object):
 
                 enrichment_results[hierarchy_index, term_index] = result
 
-        pvals = np.array([[obj.pval for obj in row] for row in enrichment_results])
-        fdr = multipletests(pvals.flatten(), method='fdr_bh')[1].reshape(pvals.shape)
-        
+        # TODO: determine if it is the right place and right exception?
+        try:
+            pvals = np.array([[obj.pval for obj in row] for row in enrichment_results])
+            fdr = multipletests(pvals.flatten(), method='fdr_bh')[1].reshape(pvals.shape)
+        except ZeroDivisionError as err:
+            raise CellmapshierarchyevalError(f"No genes were found with min_comp_size set to {self._min_comp_size}")
+
         # filter results by fdr and JI, sort by max JI
         for hierarchy_index in np.arange(enrichment_results.shape[0]):
 
@@ -302,11 +307,11 @@ class CellmapshierarchyevalRunner(object):
             for term_index in np.arange(enrichment_results.shape[1]):
                 enrichment_results[hierarchy_index, term_index].set_adjusted_pval(fdr[hierarchy_index,term_index])
                 enrichment_results[hierarchy_index, term_index].set_accepted(self._min_jaccard_index, self._max_fdr)
-        
+
         return enrichment_results
 
     def _add_results_to_hierarchy(self, hierarchy, terms, enrichment_results):
-        
+
         for hierarchy_index in np.arange(enrichment_results.shape[0]):
             node = hierarchy.get_node(hierarchy_index)
             sorted_results = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index, reverse=True)
@@ -324,7 +329,7 @@ class CellmapshierarchyevalRunner(object):
             node_genes = hierarchy_cx.get_node_attribute(node, 'CD_MemberList')['v'].split(' ')
             hierarchy_genes.update(node_genes)
         return list(hierarchy_genes)
-    
+
     def _create_rocrate(self):
         """
         Creates rocrate for output directory
@@ -396,13 +401,13 @@ class CellmapshierarchyevalRunner(object):
 
         # write node list to filesystem
         with open(dest_path, 'w') as f:
-            
+
             # write headers
             f.write('Name' + '\t')
             for a in hierarchy.get_node_attributes(0):
                 f.write(a['n'] + '\t')
             f.write('\n')
-            
+
             #write node attributes
             for node_id, node_obj in hierarchy.get_nodes():
                 f.write(node_obj['n'] + '\t')
@@ -459,7 +464,7 @@ class CellmapshierarchyevalRunner(object):
         """
         return os.path.join(self._outdir, constants.HIERARCHY_NETWORK_PREFIX +
                             constants.CX_SUFFIX)
-    
+
     def get_annotated_hierarchy_as_nodelist_dest_file(self):
         """
         Creates file path prefix for hierarchy
@@ -472,7 +477,7 @@ class CellmapshierarchyevalRunner(object):
         :rtype: str
         """
         return os.path.join(self._outdir, constants.HIERARCHY_NODES_FILE)
-    
+
     def get_hierarchy_input_file(self):
         """
         Creates file path prefix for hierarchy
@@ -487,7 +492,7 @@ class CellmapshierarchyevalRunner(object):
         return os.path.join(self._hierarchy_dir,
                             constants.HIERARCHY_NETWORK_PREFIX +
                             constants.CX_SUFFIX)
-    
+
     def run(self):
         """
         Evaluates CM4AI Hierarchy
@@ -514,7 +519,7 @@ class CellmapshierarchyevalRunner(object):
                                            version=cellmaps_hierarchyeval.__version__)
             self._create_rocrate()
             self._register_software()
-            
+
             generated_dataset_ids = []
 
             # annotate hierarchy
@@ -524,7 +529,7 @@ class CellmapshierarchyevalRunner(object):
             # write out annotated hierarchy
             dataset_id = self._write_and_register_annotated_hierarchy(hierarchy)
             generated_dataset_ids.append(dataset_id)
-            
+
             #write out nodes file
             dataset_id = self._write_and_register_annotated_hierarchy_as_nodelist(hierarchy)
             generated_dataset_ids.append(dataset_id)
