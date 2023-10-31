@@ -28,6 +28,15 @@ class EnrichmentTerms(object):
                  hierarchy_genes=None, min_comp_size=4):
         """
         Constructor
+
+        :param terms: The terms to be processed.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or None
+        :param term_name: Name of the term.
+        :type term_name: str or None
+        :param hierarchy_genes: Genes in the hierarchy.
+        :type hierarchy_genes: list or None
+        :param min_comp_size: Minimum number of genes in a term for it to be considered.
+        :type min_comp_size: int
         """
         self.terms = terms
         self.term_name = term_name
@@ -38,8 +47,23 @@ class EnrichmentTerms(object):
 
 
 class GO_EnrichmentTerms(EnrichmentTerms):
+    """
+    This class extends the EnrichmentTerms class to handle terms specific to Gene Ontology (GO).
+    """
     def __init__(self, terms=None, term_name=None,
                  hierarchy_genes=None, min_comp_size=4):
+        """
+        Constructor. Sets the parameters and initializes the term genes and term description.
+
+        :param terms: The terms to be processed.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or None
+        :param term_name: Name of the term.
+        :type term_name: str or None
+        :param hierarchy_genes: Genes in the hierarchy.
+        :type hierarchy_genes: list or None
+        :param min_comp_size: Minimum number of genes in a term for it to be considered.
+        :type min_comp_size: int
+        """
         super().__init__(terms=terms, term_name=term_name,
                          hierarchy_genes=hierarchy_genes,
                          min_comp_size=min_comp_size)
@@ -47,8 +71,17 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         self.term_description = self._get_term_description(terms)
 
     def _get_term_genes(self, terms):
+        """
+        Retrieves genes for given GO terms and filters out terms with genes
+        below the minimum term size.
+
+        :param terms: The GO terms for which genes are to be retrieved.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :return: Dictionary of GO terms mapped to their respective genes.
+        :rtype: dict
+        """
         term_genes_dict = {}
-        for id, node in terms.get_nodes():
+        for node_id, node in terms.get_nodes():
             term = node.get('n')
             genes = terms.get_node_attribute_value(node, 'genes')
             if genes is None:
@@ -61,8 +94,16 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         return term_genes_dict
 
     def _get_term_description(self, terms):
+        """
+        Retrieves descriptions for the given GO terms.
+
+        :param terms: The GO terms for which descriptions are to be retrieved.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :return: Dictionary of GO terms mapped to their respective descriptions.
+        :rtype: dict
+        """
         term_description = {}
-        for id, node in terms.get_nodes():
+        for node_id, node in terms.get_nodes():
             term = node.get('n')
             term_description[term] = terms.get_node_attribute_value(node,
                                                                     'description')
@@ -70,8 +111,23 @@ class GO_EnrichmentTerms(EnrichmentTerms):
 
 
 class CORUM_EnrichmentTerms(EnrichmentTerms):
+    """
+    This class extends the EnrichmentTerms class to handle terms specific to CORUM.
+    """
     def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
                  min_comp_size=4):
+        """
+        Constructor. Sets the parameters and initializes the term genes.
+
+        :param terms: The terms to be processed.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or None
+        :param term_name: Name of the term.
+        :type term_name: str or None
+        :param hierarchy_genes: Genes in the hierarchy.
+        :type hierarchy_genes: list or None
+        :param min_comp_size: Minimum number of genes in a term for it to be considered.
+        :type min_comp_size: int
+        """
         super().__init__(terms=terms, term_name=term_name,
                          hierarchy_genes=hierarchy_genes,
                          min_comp_size=min_comp_size)
@@ -79,8 +135,16 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
         self.term_description = None
 
     def _get_term_genes(self, terms):
+        """
+        Retrieves genes for given terms, and filters out terms with genes below the minimum term size.
+
+        :param terms: The terms for which genes are to be retrieved.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :return: Dictionary of terms mapped to their respective genes.
+        :rtype: dict
+        """
         term_genes_dict = {}
-        for id, node in terms.get_nodes():
+        for node_id, node in terms.get_nodes():
             genes = terms.get_node_attribute_value(node, 'subunits(Gene name)')
             if genes is None:
                 continue
@@ -93,6 +157,9 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
 
 
 class HPA_EnrichmentTerms(EnrichmentTerms):
+    """
+    This class extends the EnrichmentTerms class to handle terms specific to the Human Protein Atlas (HPA).
+    """
     def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
                  min_comp_size=4):
         super().__init__(terms=terms, term_name=term_name,
@@ -102,8 +169,17 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
         self.term_description = None
 
     def _get_term_genes(self, terms):
+        """
+        Retrieves genes for given HPA terms and builds a dictionary where keys are annotations
+        and values are lists of genes corresponding to those annotations.
+
+        :param terms: The terms for which genes are to be retrieved.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :return: Dictionary of terms mapped to their respective genes.
+        :rtype: dict
+        """
         term_genes_dict = {}
-        for id, node in terms.get_nodes():
+        for node_id, node in terms.get_nodes():
             node_name = node.get('n')
             if node_name not in self.hierarchy_genes:
                 continue
@@ -121,9 +197,8 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
 
 class EnrichmentResult(object):
     """
-    Base class for generating hierarchy
-    that is output in CX format following
-    CDAPS style
+    Base class for representing the results of enrichment analysis.
+    It generates a hierarchy that is output in the CX format following the CDAPS style.
     """
     def __init__(self,
                  term=None,
@@ -132,6 +207,15 @@ class EnrichmentResult(object):
                  overlap_genes=None):
         """
         Constructor
+
+        :param term: The term name.
+        :type term: str
+        :param pval: P-value of the enrichment result.
+        :type pval: float
+        :param jaccard_index: Jaccard index of the enrichment result.
+        :type jaccard_index: float
+        :param overlap_genes: List of overlapping genes.
+        :type overlap_genes: list
         """
         self.term = term
         self.description = None
@@ -142,22 +226,41 @@ class EnrichmentResult(object):
         self.accepted = False
 
     def set_adjusted_pval(self, adjusted_pval):
+        """
+        Sets the adjusted p-value for the enrichment result.
+
+        :param adjusted_pval: Adjusted p-value.
+        :type adjusted_pval: float
+        """
         self.adjusted_pval = adjusted_pval
 
     def set_accepted(self, min_jaccard_index, max_fdr):
+        """
+        Sets the accepted status of the enrichment result based on Jaccard index and FDR criteria.
+
+        :param min_jaccard_index: Minimum required Jaccard index for the result to be accepted.
+        :type min_jaccard_index: float
+        :param max_fdr: Maximum allowed adjusted p-value (FDR) for the result to be accepted.
+        :type max_fdr: float
+        """
         if self.jaccard_index == 1:
             self.accepted = True
         elif (self.jaccard_index >= min_jaccard_index) & (self.adjusted_pval < max_fdr):
             self.accepted = True
 
     def set_description(self, description):
+        """
+        Sets the description of the enrichment term results.
+
+        :param description: Description for the term results.
+        :type description: str
+        """
         self.description = description
 
 
 class CellmapshierarchyevalRunner(object):
     """
     Class to run Hierarchy evaluation
-
     """
     def __init__(self, outdir=None,
                  hierarchy_dir=None,
@@ -186,6 +289,14 @@ class CellmapshierarchyevalRunner(object):
         :type max_fdr: float
         :param min_jaccard_index:
         :type min_jaccard_index: float
+        :param corum:
+        :type corum: str
+        :param go_cc:
+        :type go_cc: str
+        :param hpa:
+        :type hpa: str
+        :param ndex_server:
+        :type ndex_server: str
         :param name:
         :type name: str
         :param organization_name:
@@ -225,7 +336,14 @@ class CellmapshierarchyevalRunner(object):
         self._provenance_utils = provenance_utils
 
     def _term_enrichment_hierarchy(self, hierarchy):
+        """
+        Performs term enrichment on the given hierarchy.
 
+        :param hierarchy: The hierarchy for which term enrichment is performed.
+        :type hierarchy: str
+        :return: Updated hierarchy after term enrichment.
+        :rtype: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        """
         hierarchy_cx = ndex2.create_nice_cx_from_file(hierarchy)
 
         # get genes in hierarchy
@@ -243,6 +361,21 @@ class CellmapshierarchyevalRunner(object):
         return hierarchy_cx
 
     def _process_term(self, term_name, term_class, hierarchy_cx, hierarchy_genes, uuid):
+        """
+        Processes a given term by retrieving it from the server, performing enrichment testing,
+        and adding the results to the hierarchy.
+
+        :param term_name: The name of the term to be processed.
+        :type term_name: str
+        :param term_class: The class of the term.
+        :type term_class: class
+        :param hierarchy_cx: The hierarchy in CX format.
+        :type hierarchy_cx: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :param hierarchy_genes: List of genes in the hierarchy.
+        :type hierarchy_genes: list
+        :param uuid: The UUID of the term.
+        :type uuid: str
+        """
         terms_cx = ndex2.create_nice_cx_from_server(self._ndex_server, uuid=uuid)
         terms = term_class(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
         # TODO: should it be skipped or exception should be raised?
@@ -254,7 +387,18 @@ class CellmapshierarchyevalRunner(object):
         self._add_results_to_hierarchy(hierarchy_cx, terms, enrichment_results)
 
     def _enrichment_test(self, hierarchy, terms, hierarchy_genes):
+        """
+        Performs the enrichment test on the provided hierarchy and terms.
 
+        :param hierarchy: The hierarchy in CX format.
+        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :param terms: The terms for enrichment test.
+        :type terms:
+        :param hierarchy_genes: List of genes in the hierarchy.
+        :type hierarchy_genes: list
+        :return: Matrix of enrichment results.
+        :rtype: np.ndarray
+        """
         hierarchy_size = len(hierarchy.nodes)
 
         term_genes_dict = terms.term_genes
@@ -272,7 +416,6 @@ class CellmapshierarchyevalRunner(object):
         for hierarchy_index in np.arange(hierarchy_size):
 
             node = hierarchy.get_node(hierarchy_index)
-            node_name = node['n']
             node_genes = set(hierarchy.get_node_attribute(node, 'CD_MemberList')['v'].split(' '))
             # intersection with genes in the term
             node_genes = set(node_genes).intersection(all_overlap_genes)
@@ -294,37 +437,59 @@ class CellmapshierarchyevalRunner(object):
 
                 enrichment_results[hierarchy_index, term_index] = result
 
-        # TODO: determine if it is the right place and right exception?
         try:
             pvals = np.array([[obj.pval for obj in row] for row in enrichment_results])
             fdr = multipletests(pvals.flatten(), method='fdr_bh')[1].reshape(pvals.shape)
-        except ZeroDivisionError as err:
+        except ZeroDivisionError:
             raise CellmapshierarchyevalError(f"No genes were found with min_comp_size set to {self._min_comp_size}")
 
         # filter results by fdr and JI, sort by max JI
         for hierarchy_index in np.arange(enrichment_results.shape[0]):
 
-            #set adjusted p-values and if the enrichment is accepted
+            # set adjusted p-values and if the enrichment is accepted
             for term_index in np.arange(enrichment_results.shape[1]):
-                enrichment_results[hierarchy_index, term_index].set_adjusted_pval(fdr[hierarchy_index,term_index])
+                enrichment_results[hierarchy_index, term_index].set_adjusted_pval(fdr[hierarchy_index, term_index])
                 enrichment_results[hierarchy_index, term_index].set_accepted(self._min_jaccard_index, self._max_fdr)
 
         return enrichment_results
 
     def _add_results_to_hierarchy(self, hierarchy, terms, enrichment_results):
+        """
+        Incorporates the enrichment results into the hierarchy by adding relevant node attributes.
 
+        :param hierarchy: The hierarchy in CX format.
+        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :param terms: The terms used for enrichment.
+        :type terms:
+        :param enrichment_results: Matrix of enrichment results.
+        :type enrichment_results: np.ndarray
+        """
         for hierarchy_index in np.arange(enrichment_results.shape[0]):
             node = hierarchy.get_node(hierarchy_index)
-            sorted_results = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index, reverse=True)
+            sorted_results = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index,
+                                    reverse=True)
             sorted_results_threshold = [x for x in sorted_results if x.accepted]
-            hierarchy.set_node_attribute(node, '{}_terms'.format(terms.term_name), '|'.join([x.term for x in sorted_results_threshold]))
+            hierarchy.set_node_attribute(node, '{}_terms'.format(terms.term_name),
+                                         '|'.join([x.term for x in sorted_results_threshold]))
             if terms.term_description is not None:
-                hierarchy.set_node_attribute(node, '{}_descriptions'.format(terms.term_name), '|'.join([x.description for x in sorted_results_threshold]))
-            hierarchy.set_node_attribute(node, '{}_FDRs'.format(terms.term_name), '|'.join([str(x.adjusted_pval) for x in sorted_results_threshold]))
-            hierarchy.set_node_attribute(node, '{}_jaccard_indexes'.format(terms.term_name), '|'.join([str(x.jaccard_index) for x in sorted_results_threshold]))
-            hierarchy.set_node_attribute(node, '{}_overlap_genes'.format(terms.term_name), '|'.join([','.join(x.overlap_genes) for x in sorted_results_threshold]))
+                hierarchy.set_node_attribute(node, '{}_descriptions'.format(terms.term_name),
+                                             '|'.join([x.description for x in sorted_results_threshold]))
+            hierarchy.set_node_attribute(node, '{}_FDRs'.format(terms.term_name),
+                                         '|'.join([str(x.adjusted_pval) for x in sorted_results_threshold]))
+            hierarchy.set_node_attribute(node, '{}_jaccard_indexes'.format(terms.term_name),
+                                         '|'.join([str(x.jaccard_index) for x in sorted_results_threshold]))
+            hierarchy.set_node_attribute(node, '{}_overlap_genes'.format(terms.term_name),
+                                         '|'.join([','.join(x.overlap_genes) for x in sorted_results_threshold]))
 
     def _get_hierarchy_genes(self, hierarchy_cx):
+        """
+        Extracts and returns all genes from the provided hierarchy.
+
+        :param hierarchy_cx: The hierarchy from which genes are extracted.
+        :type hierarchy_cx: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :return: List of genes in the hierarchy.
+        :rtype: list
+        """
         hierarchy_genes = set()
         for node in hierarchy_cx.nodes:
             node_genes = hierarchy_cx.get_node_attribute(node, 'CD_MemberList')['v'].split(' ')
@@ -374,6 +539,10 @@ class CellmapshierarchyevalRunner(object):
 
     def _register_computation(self, generated_dataset_ids=[]):
         """
+        Registers the computation run details with the FAIRSCAPE platform.
+
+        :param generated_dataset_ids: List of IDs for the datasets generated during the computation.
+        :type generated_dataset_ids: list
         # Todo: added in used dataset, software and what is being generated
         :return:
         """
@@ -409,7 +578,7 @@ class CellmapshierarchyevalRunner(object):
                 f.write(a['n'] + '\t')
             f.write('\n')
 
-            #write node attributes
+            # write node attributes
             for node_id, node_obj in hierarchy.get_nodes():
                 f.write(node_obj['n'] + '\t')
                 for a in hierarchy.get_node_attributes(node_obj):
@@ -431,9 +600,12 @@ class CellmapshierarchyevalRunner(object):
 
     def _write_and_register_annotated_hierarchy(self, hierarchy):
         """
+         Writes out the provided hierarchy in the CX format and registers it.
 
-        :param network:
-        :return:
+        :param hierarchy: The hierarchy to be written out.
+        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :return: Dataset ID for the registered hierarchy.
+        :rtype: str
         """
         logger.debug('Writing hierarchy')
         hierarchy_out_file = self.get_annotated_hierarchy_dest_file()
@@ -458,8 +630,6 @@ class CellmapshierarchyevalRunner(object):
 
         Example path: ``/tmp/foo/hierarchy``
 
-        :param hierarchy: Hierarchy Network
-        :type hierarchy: :py:class:`ndex2.nice_cx_network.NiceCXNetwork`
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
@@ -472,8 +642,6 @@ class CellmapshierarchyevalRunner(object):
 
         Example path: ``/tmp/foo/hierarchy``
 
-        :param hierarchy: Hierarchy Network
-        :type hierarchy: :py:class:`ndex2.nice_cx_network.NiceCXNetwork`
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
@@ -485,8 +653,6 @@ class CellmapshierarchyevalRunner(object):
 
         Example path: ``/tmp/foo/hierarchy``
 
-        :param hierarchy: Hierarchy Network
-        :type hierarchy: :py:class:`ndex2.nice_cx_network.NiceCXNetwork`
         :return: Prefix path on filesystem to write Hierarchy Network
         :rtype: str
         """
@@ -497,7 +663,6 @@ class CellmapshierarchyevalRunner(object):
     def run(self):
         """
         Evaluates CM4AI Hierarchy
-
 
         :return:
         """
@@ -531,7 +696,7 @@ class CellmapshierarchyevalRunner(object):
             dataset_id = self._write_and_register_annotated_hierarchy(hierarchy)
             generated_dataset_ids.append(dataset_id)
 
-            #write out nodes file
+            # write out nodes file
             dataset_id = self._write_and_register_annotated_hierarchy_as_nodelist(hierarchy)
             generated_dataset_ids.append(dataset_id)
 
