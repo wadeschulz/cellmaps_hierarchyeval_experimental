@@ -9,6 +9,7 @@ from scipy.stats import hypergeom
 from statsmodels.stats.multitest import multipletests
 import warnings
 import ndex2
+from ndex2.cx2 import CX2Network
 from cellmaps_utils import constants
 from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
@@ -339,20 +340,22 @@ class CellmapshierarchyevalRunner(object):
             self._skip_logging = skip_logging
 
         self._provenance_utils = provenance_utils
+        self._suffix = constants.CX2_SUFFIX
 
     def _term_enrichment_hierarchy(self, hierarchy):
         """
         Performs term enrichment on the given hierarchy.
 
         :param hierarchy: The hierarchy for which term enrichment is performed.
-        :type hierarchy: str
+        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or :py:class:`~ndex2.cx2.CX2Network`
         :return: Updated hierarchy after term enrichment.
-        :rtype: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :rtype: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or :py:class:`~ndex2.cx2.CX2Network`
         """
-        hierarchy_cx = ndex2.create_nice_cx_from_file(hierarchy)
-
+        if self._suffix == constants.CX2_SUFFIX:
+            warnings.warn("Term enrichment for cx2 hierarchy is not implemented")
+            return hierarchy
         # get genes in hierarchy
-        hierarchy_genes = self._get_hierarchy_genes(hierarchy_cx)
+        hierarchy_genes = self._get_hierarchy_genes(hierarchy)
 
         term_definitions = [
             ('CORUM', CORUM_EnrichmentTerms, self._corum),
@@ -361,9 +364,9 @@ class CellmapshierarchyevalRunner(object):
         ]
 
         for term_name, term_class, term_uuid in term_definitions:
-            self._process_term(term_name, term_class, hierarchy_cx, hierarchy_genes, term_uuid)
+            self._process_term(term_name, term_class, hierarchy, hierarchy_genes, term_uuid)
 
-        return hierarchy_cx
+        return hierarchy
 
     def _process_term(self, term_name, term_class, hierarchy_cx, hierarchy_genes, uuid):
         """
@@ -585,7 +588,7 @@ class CellmapshierarchyevalRunner(object):
         Writes out **hierarchy** passed in as node list file
 
         :param hierarchy:
-        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or :py:class:`~ndex2.cx2.CX2Network`
         :return: (dataset id, path to output file)
         :rtype: tuple
         """
@@ -594,23 +597,38 @@ class CellmapshierarchyevalRunner(object):
 
         # write node list to filesystem
         with open(dest_path, 'w') as f:
-
-            # write headers
-            f.write('Name' + '\t')
-            for a in hierarchy.get_node_attributes(0):
-                f.write(a['n'] + '\t')
-            f.write('\n')
-
-            # write node attributes
-            for node_id, node_obj in hierarchy.get_nodes():
-                f.write(node_obj['n'] + '\t')
-                for a in hierarchy.get_node_attributes(node_obj):
-                    f.write(a['v'] + '\t')
+            if self._suffix == constants.CX_SUFFIX:
+                # write headers
+                f.write('Name' + '\t')
+                for a in hierarchy.get_node_attributes(0):
+                    f.write(a['n'] + '\t')
                 f.write('\n')
 
+                # write node attributes
+                for node_id, node_obj in hierarchy.get_nodes():
+                    f.write(node_obj['n'] + '\t')
+                    for a in hierarchy.get_node_attributes(node_obj):
+                        f.write(a['v'] + '\t')
+                    f.write('\n')
+            else:
+                # write headers
+                attribute_declarations = hierarchy.get_attribute_declarations()
+                node_attribute_names = attribute_declarations.get('nodes', [])
+                for attribute_name in node_attribute_names:
+                    f.write(attribute_name + '\t')
+                f.write('\n')
+
+                # write node attributes
+                nodes_dict = hierarchy.get_nodes()
+                for node_id, node_data in nodes_dict.items():
+                    node_attributes = node_data["v"]
+                    for attribute_name in node_attribute_names:
+                        value = node_attributes.get(attribute_name, "")
+                        f.write(str(value) + '\t')
+                    f.write('\n')
+
         # register node list file with fairscape
-        data_dict = {'name': os.path.basename(dest_path) +
-                             ' PPI edgelist file',
+        data_dict = {'name': os.path.basename(dest_path) + ' PPI nodelist file',
                      'description': 'Annotated Nodelist file',
                      'data-format': 'tsv',
                      'author': cellmaps_hierarchyeval.__name__,
@@ -626,22 +644,31 @@ class CellmapshierarchyevalRunner(object):
          Writes out the provided hierarchy in the CX format and registers it.
 
         :param hierarchy: The hierarchy to be written out.
-        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :type hierarchy: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or :py:class:`~ndex2.cx2.CX2Network`
         :return: Dataset ID for the registered hierarchy.
         :rtype: str
         """
         logger.debug('Writing hierarchy')
         hierarchy_out_file = self.get_annotated_hierarchy_dest_file()
         with open(hierarchy_out_file, 'w') as f:
-            json.dump(hierarchy.to_cx(), f)
-            # register ppi network file with fairscape
-            data_dict = {'name': os.path.basename(hierarchy_out_file) +
-                                 ' Hierarchy network file',
-                         'description': 'Hierarchy network file',
-                         'data-format': 'CX',
-                         'author': cellmaps_hierarchyeval.__name__,
-                         'version': cellmaps_hierarchyeval.__version__,
-                         'date-published': date.today().strftime('%m-%d-%Y')}
+            if self._suffix == constants.CX_SUFFIX:
+                json.dump(hierarchy.to_cx(), f)
+                # register ppi network file with fairscape
+                data_dict = {'name': os.path.basename(hierarchy_out_file) + ' Hierarchy network file',
+                             'description': 'Hierarchy network file',
+                             'data-format': 'CX',
+                             'author': cellmaps_hierarchyeval.__name__,
+                             'version': cellmaps_hierarchyeval.__version__,
+                             'date-published': date.today().strftime('%m-%d-%Y')}
+            else:
+                json.dump(hierarchy.to_cx2(), f)
+                # register ppi network file with fairscape
+                data_dict = {'name': os.path.basename(hierarchy_out_file) + ' Hierarchy network file',
+                             'description': 'Hierarchy network file',
+                             'data-format': 'CX2',
+                             'author': cellmaps_hierarchyeval.__name__,
+                             'version': cellmaps_hierarchyeval.__version__,
+                             'date-published': date.today().strftime('%m-%d-%Y')}
             dataset_id = self._provenance_utils.register_dataset(self._outdir,
                                                                  source_file=hierarchy_out_file,
                                                                  data_dict=data_dict)
@@ -657,7 +684,7 @@ class CellmapshierarchyevalRunner(object):
         :rtype: str
         """
         return os.path.join(self._outdir, constants.HIERARCHY_NETWORK_PREFIX +
-                            constants.CX_SUFFIX)
+                            self._suffix)
 
     def get_annotated_hierarchy_as_nodelist_dest_file(self):
         """
@@ -676,12 +703,29 @@ class CellmapshierarchyevalRunner(object):
 
         Example path: ``/tmp/foo/hierarchy``
 
-        :return: Prefix path on filesystem to write Hierarchy Network
+        :return: Prefix path on filesystem where Hierarchy Network resides
         :rtype: str
         """
-        return os.path.join(self._hierarchy_dir,
-                            constants.HIERARCHY_NETWORK_PREFIX +
-                            constants.CX_SUFFIX)
+        cx_file_path = os.path.join(self._hierarchy_dir, constants.HIERARCHY_NETWORK_PREFIX + constants.CX_SUFFIX)
+        if os.path.exists(cx_file_path):
+            self._suffix = constants.CX_SUFFIX
+            return cx_file_path
+
+        cx2_file_path = os.path.join(self._hierarchy_dir, constants.HIERARCHY_NETWORK_PREFIX + constants.CX2_SUFFIX)
+        if os.path.exists(cx2_file_path):
+            self._suffix = constants.CX2_SUFFIX
+            return cx2_file_path
+
+        raise CellmapshierarchyevalError(f"Hierarchy dir '{self._hierarchy_dir}' does not contain neither cx nor cx2 "
+                                         f"files.")
+
+    def get_hierarchy(self, hierarchy_path):
+        if self._suffix == constants.CX_SUFFIX:
+            return ndex2.create_nice_cx_from_file(hierarchy_path)
+        else:
+            cx2_obj = CX2Network()
+            cx2_obj.create_from_raw_cx2(hierarchy_path)
+            return cx2_obj
 
     def run(self):
         """
@@ -712,7 +756,8 @@ class CellmapshierarchyevalRunner(object):
             generated_dataset_ids = []
 
             # annotate hierarchy
-            hierarchy = self.get_hierarchy_input_file()
+            hierarchy_path = self.get_hierarchy_input_file()
+            hierarchy = self.get_hierarchy(hierarchy_path)
             hierarchy = self._term_enrichment_hierarchy(hierarchy)
 
             # write out annotated hierarchy

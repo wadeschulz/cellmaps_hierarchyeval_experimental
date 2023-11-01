@@ -7,9 +7,13 @@ import os
 import tempfile
 import shutil
 import unittest
+from unittest.mock import patch
+
 import ndex2
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
+
+from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
 
 
@@ -31,11 +35,20 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
         runner = CellmapshierarchyevalRunner('outdir')
         self.assertIsNotNone(runner)
 
-    def test_get_hierarchy_file(self):
+    @patch('os.path.exists')
+    def test_get_hierarchy_file(self, mock_exists):
+        mock_exists.side_effect = lambda path: path.endswith('.cx')
         runner = CellmapshierarchyevalRunner('outdir',
                                              hierarchy_dir='/hier')
         self.assertIsNotNone('/hier/hierarchy.cx',
                              runner.get_hierarchy_input_file())
+
+    def test_get_hierarchy_file_does_not_exist(self):
+        runner = CellmapshierarchyevalRunner('outdir',
+                                             hierarchy_dir='/hier')
+
+        with self.assertRaises(CellmapshierarchyevalError):
+            runner.get_hierarchy_input_file()
 
     def test_4nodehierarchy(self):
         temp_dir = tempfile.mkdtemp()
