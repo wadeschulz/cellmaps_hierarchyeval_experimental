@@ -264,7 +264,17 @@ class EnrichmentResult(object):
 
 
 class BaseNetworkHelper(object):
+    """
+    Base class for network helpers.
+    """
+
     def __init__(self, hierarchy_path):
+        """
+        Constructor.
+
+        :param hierarchy_path: File system path where the hierarchy network data is stored.
+        :type hierarchy_path: str
+        """
         self._hierarchy_path = hierarchy_path
 
     def get_hierarchy_input_file(self):
@@ -280,42 +290,112 @@ class BaseNetworkHelper(object):
 
 
 class CX2NetworkHelper(BaseNetworkHelper):
+    """
+    Helper class for CX2 network data manipulation that extends the
+    BaseNetworkHelper class with CX2-specific logic.
+    """
 
     def __init__(self, hierarchy_path):
+        """
+        Constructor.
+
+        :param hierarchy_path: File system path where the CX2 hierarchy network data is stored.
+        :type hierarchy_path: str
+        """
         super().__init__(hierarchy_path)
 
     def get_hierarchy(self):
+        """
+        Create and return a CX2 network object from the hierarchy path.
+
+        :return: An instance of the CX2Network class.
+        :rtype: CX2Network
+        """
         cx2_obj = CX2Network()
         cx2_obj.create_from_raw_cx2(self._hierarchy_path)
         return cx2_obj
 
     @staticmethod
     def get_suffix():
+        """
+        Get the file suffix associated with CX2 files.
+
+        :return: The suffix for CX2 file types.
+        :rtype: str
+        """
         return constants.CX2_SUFFIX
 
     @staticmethod
     def get_format():
+        """
+        Get string format identifier for CX2 network data.
+
+        :return: The format identifier for CX2.
+        :rtype: str
+        """
         return 'CX2'
 
     @staticmethod
     def dump_to_file(hierarchy, hierarchy_out_file):
+        """
+        Save the hierarchy to a CX2 formatted JSON file.
+
+        :param hierarchy: The hierarchy to save.
+        :type hierarchy: CX2Network
+        :param hierarchy_out_file: The file path where the hierarchy should be written.
+        :type hierarchy_out_file: str
+        """
         with open(hierarchy_out_file, 'w') as f:
             json.dump(hierarchy.to_cx2(), f)
 
     @staticmethod
     def get_hierarchy_real_ids(hierarchy=None, hierarchy_size=None):
+        """
+        Retrieve the real identifiers of nodes within the hierarchy.
+
+        :param hierarchy: The hierarchy from which to extract node IDs.
+        :type hierarchy: CX2Network
+        :param hierarchy_size: Not used, but specified for compatibility.
+        :return: A list of node identifiers.
+        :rtype: list
+        """
         return [node_id for node_id in hierarchy.get_nodes().keys()]
 
     @staticmethod
     def get_node_genes(_, node=None):
+        """
+        Extract the gene identifiers from a given node.
+
+        :param _: Placeholder, not used.
+        :param node: The node from which to extract gene identifiers.
+        :type node: dict
+        :return: A list of gene identifiers.
+        :rtype: list
+        """
         return node.get('v', {}).get('CD_MemberList', '').split(' ')
 
     @staticmethod
     def get_nodes(hierarchy):
+        """
+        Retrieve the nodes from the hierarchy.
+
+        :param hierarchy: The hierarchy from which to retrieve nodes.
+        :type hierarchy: CX2Network
+        :return: A dictionary of nodes.
+        :rtype: dict
+        """
         return hierarchy.get_nodes()
 
     @staticmethod
     def write_as_nodelist(hierarchy, dest_path):
+        """
+        Write the nodes of the hierarchy to a specified file path as a tab-delimited list.
+
+        :param hierarchy: The hierarchy containing the nodes to write.
+        :type hierarchy: CX2Network
+        :param dest_path: The destination file path for the nodelist.
+        :type dest_path: str
+        """
         with open(dest_path, 'w') as f:
             # write headers
             attribute_declarations = hierarchy.get_attribute_declarations()
@@ -333,40 +413,112 @@ class CX2NetworkHelper(BaseNetworkHelper):
                     f.write(str(value) + '\t')
                 f.write('\n')
 
+
 class NiceCXNetworkHelper(BaseNetworkHelper):
+    """
+    Helper class for NiceCX network data manipulation that extends the
+    BaseNetworkHelper class with CX-specific logic.
+    """
     def __init__(self, hierarchy_path):
+        """
+        Constructor.
+
+        :param hierarchy_path: File system path where the NiceCX hierarchy network data is stored.
+        :type hierarchy_path: str
+        """
         super().__init__(hierarchy_path)
 
     def get_hierarchy(self):
+        """
+        Create and return a NiceCXNetwork object from the hierarchy path.
+
+        :return: An instance of the NiceCX network class.
+        :rtype: ndex2.nice_cx_network.NiceCXNetwork
+        """
         return ndex2.create_nice_cx_from_file(self._hierarchy_path)
 
     @staticmethod
     def get_suffix():
+        """
+        Get the file suffix associated with CX files.
+
+        :return: The suffix for NiceCX file types.
+        :rtype: str
+        """
         return constants.CX_SUFFIX
 
     @staticmethod
     def get_format():
+        """
+        Get the string format identifier for CX data.
+
+        :return: The format identifier for NiceCX.
+        :rtype: str
+        """
         return 'CX'
 
     @staticmethod
     def dump_to_file(hierarchy, hierarchy_out_file):
+        """
+        Save the hierarchy to a CX formatted JSON file.
+
+        :param hierarchy: The hierarchy to save.
+        :type hierarchy: ndex2.nice_cx_network.NiceCXNetwork
+        :param hierarchy_out_file: The file path where the hierarchy should be written.
+        :type hierarchy_out_file: str
+        """
         with open(hierarchy_out_file, 'w') as f:
             json.dump(hierarchy.to_cx(), f)
 
     @staticmethod
     def get_hierarchy_real_ids(hierarchy=None, hierarchy_size=None):
+        """
+        Generate a list of real IDs for a given hierarchy size.
+
+        :param hierarchy: Not used, provided for compatibility.
+        :param hierarchy_size: The size of the hierarchy to generate IDs for.
+        :type hierarchy_size: int
+        :return: A list of sequential integers representing node IDs.
+        :rtype: list
+        """
         return list(range(hierarchy_size))
 
     @staticmethod
     def get_node_genes(hierarchy=None, node=None):
+        """
+        Extract the set of gene identifiers from a given node in the hierarchy.
+
+        :param hierarchy: The hierarchy containing the node.
+        :type hierarchy: ndex2.nice_cx_network.NiceCXNetwork
+        :param node: The node from which to extract gene identifiers.
+        :type node: int
+        :return: A set of gene identifiers.
+        :rtype: set
+        """
         return set(hierarchy.get_node_attribute(node, 'CD_MemberList')['v'].split(' '))
 
     @staticmethod
     def get_nodes(hierarchy):
+        """
+        Retrieve the nodes from the hierarchy.
+
+        :param hierarchy: The hierarchy from which to retrieve nodes.
+        :type hierarchy: ndex2.nice_cx_network.NiceCXNetwork
+        :return: A dictionary of nodes.
+        :rtype: dict
+        """
         return hierarchy.nodes
 
     @staticmethod
     def write_as_nodelist(hierarchy, dest_path):
+        """
+        Write the nodes of the hierarchy to a specified file path as a tab-delimited list.
+
+        :param hierarchy: The hierarchy containing the nodes to write.
+        :type hierarchy: ndex2.nice_cx_network.NiceCXNetwork
+        :param dest_path: The destination file path for the nodelist.
+        :type dest_path: str
+        """
         with open(dest_path, 'w') as f:
             # write headers
             f.write('Name' + '\t')
@@ -380,6 +532,7 @@ class NiceCXNetworkHelper(BaseNetworkHelper):
                 for a in hierarchy.get_node_attributes(node_obj):
                     f.write(a['v'] + '\t')
                 f.write('\n')
+
 
 class CellmapshierarchyevalRunner(object):
     """
