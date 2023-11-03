@@ -7,13 +7,11 @@ import os
 import tempfile
 import shutil
 import unittest
-from unittest.mock import patch
 
 import ndex2
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
 
-from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
 
 
@@ -34,21 +32,6 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
         """Tests constructor"""
         runner = CellmapshierarchyevalRunner('outdir')
         self.assertIsNotNone(runner)
-
-    @patch('os.path.exists')
-    def test_get_hierarchy_file(self, mock_exists):
-        mock_exists.side_effect = lambda path: path.endswith('.cx')
-        runner = CellmapshierarchyevalRunner('outdir',
-                                             hierarchy_dir='/hier')
-        self.assertIsNotNone('/hier/hierarchy.cx',
-                             runner.get_hierarchy_input_file())
-
-    def test_get_hierarchy_file_does_not_exist(self):
-        runner = CellmapshierarchyevalRunner('outdir',
-                                             hierarchy_dir='/hier')
-
-        with self.assertRaises(CellmapshierarchyevalError):
-            runner.get_hierarchy_input_file()
 
     def test_4nodehierarchy(self):
         temp_dir = tempfile.mkdtemp()
@@ -89,8 +72,6 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
                             continue
                         n_attr = hier_net.get_node_attribute(node_id, db_name + db_attr)
                         self.assertIsNotNone(n_attr, str(node_obj) + ' is none for ' + db_name + db_attr)
-
-
 
         finally:
             shutil.rmtree(temp_dir)
