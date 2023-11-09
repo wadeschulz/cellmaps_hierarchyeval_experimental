@@ -7,12 +7,14 @@ import os
 import tempfile
 import shutil
 import unittest
+from unittest.mock import patch
 
 import ndex2
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
 
-from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
+from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
+from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner, NiceCXNetworkHelper, CX2NetworkHelper
 
 
 class TestCellmapshierarchyevalrunner(unittest.TestCase):
@@ -20,6 +22,8 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures, if any."""
+        self.runner = CellmapshierarchyevalRunner('outdir')
+        self.runner._hierarchy_dir = "mock_hierarchy_dir"
 
     def tearDown(self):
         """Tear down test fixtures, if any."""
@@ -75,3 +79,23 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
 
         finally:
             shutil.rmtree(temp_dir)
+
+    @patch('os.path.exists')
+    def test_initialize_hierarchy_helper_with_cx(self, mock_exists):
+        mock_exists.side_effect = lambda path: path.endswith(constants.CX_SUFFIX)
+        self.runner.initialize_hierarchy_helper()
+        self.assertIsInstance(self.runner._hierarchy_helper, NiceCXNetworkHelper)
+
+    @patch('os.path.exists')
+    def test_initialize_hierarchy_helper_with_cx2(self, mock_exists):
+        mock_exists.side_effect = lambda path: path.endswith(constants.CX2_SUFFIX)
+        self.runner.initialize_hierarchy_helper()
+        self.assertIsInstance(self.runner._hierarchy_helper, CX2NetworkHelper)
+
+    @patch('os.path.exists')
+    def test_initialize_hierarchy_helper_with_no_files(self, mock_exists):
+        mock_exists.return_value = False
+        with self.assertRaises(CellmapshierarchyevalError) as err:
+            self.runner.initialize_hierarchy_helper()
+        self.assertTrue(f"Input directory '{self.runner._hierarchy_dir}' does not contain "
+                        f"neither cx nor cx2 files." in str(err.exception))
