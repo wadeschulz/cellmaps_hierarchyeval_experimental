@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import os
 import logging
+import shutil
 import time
 import json
 import numpy as np
@@ -904,6 +905,37 @@ class CellmapshierarchyevalRunner(object):
                                                              data_dict=data_dict)
         return dataset_id
 
+    def get_hierarchy_parent_network_dest_file(self):
+        """
+        Creates file path prefix for hierarchy parent network
+
+        Example path: ``/tmp/foo/hierarchy_parent``
+        :return:
+        """
+        return os.path.join(self._outdir, 'hierarchy_parent')
+
+    def _write_and_register_hierarchy_parent_network(self, parent_input_file=None):
+        """
+        :param network:
+        :return:
+        """
+        logger.debug('Writing hierarchy parent')
+        suffix = self._hierarchy_helper.get_suffix()
+        parent_out_file = self.get_hierarchy_parent_network_dest_file() + suffix
+        shutil.copy(parent_input_file, parent_out_file)
+
+        data_dict = {'name': 'Hierarchy parent network',
+                     'description': 'Hierarchy parent network file',
+                     'keywords': ['file', 'parent', 'interactome', 'ppi', 'network', 'CX2'],
+                     'data-format': self._hierarchy_helper.get_format(),
+                     'author': cellmaps_hierarchyeval.__name__,
+                     'version': cellmaps_hierarchyeval.__version__,
+                     'date-published': date.today().strftime(self._provenance_utils.get_default_date_format_str())}
+        dataset_id = self._provenance_utils.register_dataset(self._outdir,
+                                                             source_file=parent_out_file,
+                                                             data_dict=data_dict)
+        return dataset_id
+
     def get_annotated_hierarchy_dest_file(self):
         """
         Creates file path prefix for hierarchy
@@ -985,6 +1017,13 @@ class CellmapshierarchyevalRunner(object):
             # write out annotated hierarchy
             dataset_id = self._write_and_register_annotated_hierarchy(hierarchy)
             generated_dataset_ids.append(dataset_id)
+
+            # write out parent network
+            parent_network_path = os.path.join(
+                self._hierarchy_dir, 'hierarchy_parent' + self._hierarchy_helper.get_suffix())
+            if os.path.exists(parent_network_path):
+                dataset_id = self._write_and_register_hierarchy_parent_network(parent_network_path)
+                generated_dataset_ids.append(dataset_id)
 
             # write out nodes file
             dataset_id = self._write_and_register_annotated_hierarchy_as_nodelist(hierarchy)
