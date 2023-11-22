@@ -743,6 +743,7 @@ class CellmapshierarchyevalRunner(object):
         :param enrichment_results: Matrix of enrichment results.
         :type enrichment_results: np.ndarray
         """
+        updated_node_ids = set()
         for hierarchy_index in np.arange(enrichment_results.shape[0]):
             node_id = self._hierarchy_real_ids[hierarchy_index]
             sorted_results = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index,
@@ -759,8 +760,12 @@ class CellmapshierarchyevalRunner(object):
                                          '|'.join([str(x.jaccard_index) for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node_id, '{}_overlap_genes'.format(terms.term_name),
                                          '|'.join([','.join(x.overlap_genes) for x in sorted_results_threshold]))
+            updated_node_ids.add(node_id)
 
-    def _add_empty_attr_to_hierarchy(self, hierarchy, terms):
+        node_ids = list(set(self._hierarchy_helper.get_nodes(hierarchy)).difference(updated_node_ids))
+        self._add_empty_attr_to_hierarchy(hierarchy, terms, node_ids=node_ids)
+
+    def _add_empty_attr_to_hierarchy(self, hierarchy, terms, node_ids=None):
         """
         Adds empty attributes to nodes in the hierarchy for the given term.
         This is used when no genes are present for enrichment of the specific term.
@@ -770,8 +775,10 @@ class CellmapshierarchyevalRunner(object):
         :param terms: The terms for which empty attributes should be added.
         :type terms:
         """
+        if node_ids is None:
+            node_ids = self._hierarchy_helper.get_nodes(hierarchy)
 
-        for node_id in self._hierarchy_helper.get_nodes(hierarchy):
+        for node_id in node_ids:
             hierarchy.set_node_attribute(node_id, '{}_terms'.format(terms.term_name), "")
             hierarchy.set_node_attribute(node_id, '{}_descriptions'.format(terms.term_name), "")
             hierarchy.set_node_attribute(node_id, '{}_FDRs'.format(terms.term_name), "")
@@ -959,6 +966,25 @@ class CellmapshierarchyevalRunner(object):
         """
         return os.path.join(self._outdir, constants.HIERARCHY_NODES_FILE)
 
+    def _update_annotate_hierarchy(self, network=None, path=None):
+        """
+        Adds HCX attributes to network as well as sets
+
+        ``prov:wasGeneratedBy`` to the name and version of this tool
+
+        ``prov:wasDerivedFrom`` to FAIRSCAPE dataset id of this rocrate
+
+        :param network: Hierarchy
+        :type network: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or :py:class:`~ndex2.cx2.CX2Network`
+        :param path: Path to largest PPI network in CX or CX2 format
+        :type path: str
+        """
+        network.add_network_attribute('prov:wasGeneratedBy',
+                                      cellmaps_hierarchyeval.__name__ + ' ' + cellmaps_hierarchyeval.__version__)
+
+        rocrate_id = self._provenance_utils.get_id_of_rocrate(path)
+        network.add_network_attribute('prov:wasDerivedFrom', 'RO-crate: ' + str(rocrate_id))
+
     def initialize_hierarchy_helper(self):
         """
         Initializes hierarchy helper which will  be used to call custom methods
@@ -1013,6 +1039,7 @@ class CellmapshierarchyevalRunner(object):
             # annotate hierarchy
             hierarchy = self._hierarchy_helper.get_hierarchy()
             hierarchy = self._term_enrichment_hierarchy(hierarchy)
+            self._update_annotate_hierarchy(hierarchy, self._outdir)
 
             # write out annotated hierarchy
             dataset_id = self._write_and_register_annotated_hierarchy(hierarchy)
