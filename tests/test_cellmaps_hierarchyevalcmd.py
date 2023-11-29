@@ -27,7 +27,7 @@ class TestCellmapshierarchyeval(unittest.TestCase):
                                                           cellmaps_hierarchyevalcmd.HIERARCHYDIR,
                                                           'foox'])
 
-        self.assertEqual(res.verbose, 0)
+        self.assertEqual(res.verbose, 1)
         self.assertEqual(res.logconf, None)
         self.assertEqual(res.outdir, 'outdir')
         self.assertEqual(res.hierarchy_dir, 'foox')
@@ -37,7 +37,7 @@ class TestCellmapshierarchyeval(unittest.TestCase):
                     'foo']
         res = cellmaps_hierarchyevalcmd._parse_arguments('hi', someargs)
 
-        self.assertEqual(res.verbose, 2)
+        self.assertEqual(res.verbose, 3)
         self.assertEqual(res.logconf, 'hi')
         self.assertEqual(res.hierarchy_dir, 'foo')
         self.assertEqual(res.outdir, 'resdir')
