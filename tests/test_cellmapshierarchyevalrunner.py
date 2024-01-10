@@ -7,11 +7,12 @@ import os
 import tempfile
 import shutil
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import ndex2
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
+from requests import RequestException
 
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner, NiceCXNetworkHelper, CX2NetworkHelper
@@ -99,3 +100,18 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
             self.runner.initialize_hierarchy_helper()
         self.assertTrue(f"Input directory '{self.runner._hierarchy_dir}' does not contain "
                         f"neither cx nor cx2 files." in str(err.exception))
+
+    @patch('ndex2.create_nice_cx_from_server')
+    def test_get_network_failure(self, mock_create_nice_cx):
+        mock_response = Mock()
+        mock_response.text = "Server error"
+        mock_create_nice_cx.side_effect = [RequestException(response=mock_response),
+                                           RequestException(response=mock_response),
+                                           RequestException(response=mock_response)]
+
+        your_instance = CellmapshierarchyevalRunner('foo')
+
+        with self.assertRaises(CellmapshierarchyevalError) as context:
+            your_instance._get_network_from_server(uuid="some_uuid", retry_wait=0)
+
+        self.assertIn('3 attempts to get network some_uuid failed', str(context.exception))

@@ -6,6 +6,8 @@ import time
 import json
 import numpy as np
 from datetime import date
+
+from requests import RequestException
 from scipy.stats import hypergeom
 from statsmodels.stats.multitest import multipletests
 import warnings
@@ -420,6 +422,7 @@ class NiceCXNetworkHelper(BaseNetworkHelper):
     Helper class for NiceCX network data manipulation that extends the
     BaseNetworkHelper class with CX-specific logic.
     """
+
     def __init__(self, hierarchy_path):
         """
         Constructor.
@@ -638,6 +641,28 @@ class CellmapshierarchyevalRunner(object):
 
         return hierarchy
 
+    def _get_network_from_server(self, uuid=None, max_retries=3, retry_wait=10):
+        """
+        :param uuid:
+        :type uuid: str
+        :param max_retries:
+        :type max_retries: int
+        :param retry_wait:
+        :type retry_wait: int
+        :return:
+        """
+        retry_num = 1
+        while retry_num < max_retries:
+            logger.debug('Getting term network try # ' + str(retry_num))
+            try:
+                return ndex2.create_nice_cx_from_server(self._ndex_server, uuid=uuid)
+            except RequestException as he:
+                logger.debug(str(he.response.text))
+                retry_num += 1
+            time.sleep(retry_wait)
+        raise CellmapshierarchyevalError(str(max_retries) + ' attempts to get network ' +
+                                         str(uuid) + ' failed')
+
     def _process_term(self, term_name, term_class, hierarchy, hierarchy_genes, uuid):
         """
         Processes a given term by retrieving it from the server, performing enrichment testing,
@@ -654,7 +679,7 @@ class CellmapshierarchyevalRunner(object):
         :param uuid: The UUID of the term.
         :type uuid: str
         """
-        terms_cx = ndex2.create_nice_cx_from_server(self._ndex_server, uuid=uuid)
+        terms_cx = self._get_network_from_server(uuid)
         terms = term_class(terms_cx, term_name, hierarchy_genes, self._min_comp_size)
         if len(terms.term_genes) == 0:
             warnings.warn(f"Skipping {term_name} enrichment due to no genes present when "
