@@ -760,6 +760,9 @@ class CellmapshierarchyevalRunner(object):
                                          '|'.join([str(x.jaccard_index) for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node_id, '{}_overlap_genes'.format(terms.term_name),
                                          '|'.join([','.join(x.overlap_genes) for x in sorted_results_threshold]))
+            if len(sorted_results_threshold) > 0:
+                hierarchy.set_node_attribute(node_id, '{}_max_jaccard_index'.format(terms.term_name), sorted_results_threshold[0].jaccard_index)
+                
             updated_node_ids.add(node_id)
 
         node_ids = list(set(self._hierarchy_helper.get_nodes(hierarchy)).difference(updated_node_ids))
