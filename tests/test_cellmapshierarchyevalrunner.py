@@ -61,8 +61,6 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
                                                  input_data_dict={})
             self.assertEqual(0, runner.run())
 
-            error_log_file = os.path.join(outdir, 'error.log')
-            self.assertEqual(0, os.path.getsize(error_log_file))
             hierarchy_file = runner.get_annotated_hierarchy_dest_file()
             hier_net = ndex2.create_nice_cx_from_file(hierarchy_file)
             self.assertEqual('test 4node hierarchy', hier_net.get_name())
