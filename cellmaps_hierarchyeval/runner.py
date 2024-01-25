@@ -527,14 +527,14 @@ class NiceCXNetworkHelper(BaseNetworkHelper):
             # write headers
             f.write('Name' + '\t')
             for a in hierarchy.get_node_attributes(0):
-                f.write(a['n'] + '\t')
+                f.write(str(a['n']) + '\t')
             f.write('\n')
 
             # write node attributes
             for node_id, node_obj in hierarchy.get_nodes():
                 f.write(node_obj['n'] + '\t')
                 for a in hierarchy.get_node_attributes(node_obj):
-                    f.write(a['v'] + '\t')
+                    f.write(str(a['v']) + '\t')
                 f.write('\n')
 
 
