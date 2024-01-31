@@ -22,6 +22,7 @@ by performing enrichment against three NDEx_ networks HPA_, CORUM_, and GO-CC_
 
    installation
    usage
+   outputs
    modules
    developer
    authors
