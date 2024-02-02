@@ -72,7 +72,7 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         super().__init__(terms=terms, term_name=term_name,
                          hierarchy_genes=hierarchy_genes,
                          min_comp_size=min_comp_size)
-        self.term_genes = self._get_term_genes(terms)
+        self.term_genes, self.all_term_genes = self._get_term_genes(terms)
         self.term_description = self._get_term_description(terms)
 
     def _get_term_genes(self, terms):
@@ -86,6 +86,8 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         :rtype: dict
         """
         term_genes_dict = {}
+        all_term_genes = set()        
+        
         for node_id, node in terms.get_nodes():
             term = node.get('n')
             genes = terms.get_node_attribute_value(node, 'genes')
@@ -93,10 +95,11 @@ class GO_EnrichmentTerms(EnrichmentTerms):
                 continue
             genes = genes.split(',')
             genes = list(set(genes).intersection(set(self.hierarchy_genes)))
+            all_term_genes.update(genes)
             if len(genes) < self.min_comp_size:
                 continue
             term_genes_dict[term] = genes
-        return term_genes_dict
+        return term_genes_dict, all_term_genes
 
     def _get_term_description(self, terms):
         """
@@ -115,6 +118,57 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         return term_description
 
 
+class HiDeF_EnrichmentTerms(EnrichmentTerms):
+    """
+    This class extends the EnrichmentTerms class to handle terms specific to HiDeF output.
+    """
+
+    def __init__(self, terms=None, term_name=None, hierarchy_genes=None,
+                 min_comp_size=4):
+        """
+        Constructor. Sets the parameters and initializes the term genes.
+
+        :param terms: The terms to be processed.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork` or None
+        :param term_name: Name of the term.
+        :type term_name: str or None
+        :param hierarchy_genes: Genes in the hierarchy.
+        :type hierarchy_genes: list or None
+        :param min_comp_size: Minimum number of genes in a term for it to be considered.
+        :type min_comp_size: int
+        """
+        super().__init__(terms=terms, term_name=term_name,
+                         hierarchy_genes=hierarchy_genes,
+                         min_comp_size=min_comp_size)
+        self.term_genes, self.all_term_genes = self._get_term_genes(terms)
+        self.term_description = None
+
+    def _get_term_genes(self, terms):
+        """
+        Retrieves genes for given terms, and filters out terms with genes below the minimum term size.
+
+        :param terms: The terms for which genes are to be retrieved.
+        :type terms: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+        :return: Dictionary of terms mapped to their respective genes.
+        :rtype: dict
+        """
+        term_genes_dict = {}
+        all_term_genes = set()        
+        
+        for node_id, node in terms.get_nodes():
+            genes = terms.get_node_attribute_value(node, 'CD_MemberList')
+            if genes is None:
+                continue
+            genes = genes.split(' ')
+            genes = list(set(genes).intersection(set(self.hierarchy_genes)))
+            all_term_genes.update(genes)
+            if len(genes) < self.min_comp_size:
+                continue
+            term = node.get('n')
+            term_genes_dict[term] = genes
+        return term_genes_dict, all_term_genes
+    
+    
 class CORUM_EnrichmentTerms(EnrichmentTerms):
     """
     This class extends the EnrichmentTerms class to handle terms specific to CORUM.
@@ -137,7 +191,7 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
         super().__init__(terms=terms, term_name=term_name,
                          hierarchy_genes=hierarchy_genes,
                          min_comp_size=min_comp_size)
-        self.term_genes = self._get_term_genes(terms)
+        self.term_genes, self.all_term_genes = self._get_term_genes(terms)
         self.term_description = None
 
     def _get_term_genes(self, terms):
@@ -150,16 +204,19 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
         :rtype: dict
         """
         term_genes_dict = {}
+        all_term_genes = set()
+        
         for node_id, node in terms.get_nodes():
             genes = terms.get_node_attribute_value(node, 'subunits(Gene name)')
             if genes is None:
                 continue
             genes = list(set(genes).intersection(set(self.hierarchy_genes)))
+            all_term_genes.update(genes)
             if len(genes) < self.min_comp_size:
                 continue
             term = node.get('n')
             term_genes_dict[term] = genes
-        return term_genes_dict
+        return term_genes_dict, all_term_genes
 
 
 class HPA_EnrichmentTerms(EnrichmentTerms):
@@ -172,7 +229,7 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
         super().__init__(terms=terms, term_name=term_name,
                          hierarchy_genes=hierarchy_genes,
                          min_comp_size=min_comp_size)
-        self.term_genes = self._get_term_genes(terms)
+        self.term_genes, self.all_term_genes = self._get_term_genes(terms)
         self.term_description = None
 
     def _get_term_genes(self, terms):
@@ -186,10 +243,13 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
         :rtype: dict
         """
         term_genes_dict = {}
+        all_term_genes = set()
+        
         for node_id, node in terms.get_nodes():
             node_name = node.get('n')
             if node_name not in self.hierarchy_genes:
                 continue
+            all_term_genes.add(node_name)
             for a in ['Main location', 'Additional location']:
                 annotations = terms.get_node_attribute_value(node, a)
                 if annotations is None:
@@ -199,8 +259,7 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
                         term_genes_dict[c].append(node_name)
                     else:
                         term_genes_dict[c] = [node_name]
-        return term_genes_dict
-
+        return term_genes_dict, all_term_genes
 
 class EnrichmentResult(object):
     """
@@ -633,7 +692,8 @@ class CellmapshierarchyevalRunner(object):
         term_definitions = [
             ('CORUM', CORUM_EnrichmentTerms, self._corum),
             ('GO_CC', GO_EnrichmentTerms, self._go_cc),
-            ('HPA', HPA_EnrichmentTerms, self._hpa)
+            ('HPA', HPA_EnrichmentTerms, self._hpa),
+            ('old_MuSIC_U2OS', HiDeF_EnrichmentTerms, '3339fbbc-93d1-11ee-8a13-005056ae23aa')
         ]
 
         for term_name, term_class, term_uuid in term_definitions:
@@ -710,10 +770,7 @@ class CellmapshierarchyevalRunner(object):
         enrichment_results = np.empty((hierarchy_size, term_size), dtype=object)
 
         # get overlap genes
-        all_term_genes = set()
-        for genes in term_genes_dict.values():
-            all_term_genes.update(genes)
-        all_overlap_genes = list(set(hierarchy_genes).intersection(all_term_genes))
+        all_overlap_genes = list(set(hierarchy_genes).intersection(terms.all_term_genes))
         cap_m = len(all_overlap_genes)
 
         for hierarchy_index in np.arange(hierarchy_size):
@@ -780,13 +837,13 @@ class CellmapshierarchyevalRunner(object):
                 hierarchy.set_node_attribute(node_id, '{}_descriptions'.format(terms.term_name),
                                              '|'.join([x.description for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node_id, '{}_FDRs'.format(terms.term_name),
-                                         '|'.join([str(x.adjusted_pval) for x in sorted_results_threshold]))
+                                         '|'.join(['{:0.2e}'.format(x.adjusted_pval) for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node_id, '{}_jaccard_indexes'.format(terms.term_name),
-                                         '|'.join([str(x.jaccard_index) for x in sorted_results_threshold]))
+                                         '|'.join([str(np.round(x.jaccard_index, 2)) for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node_id, '{}_overlap_genes'.format(terms.term_name),
                                          '|'.join([','.join(x.overlap_genes) for x in sorted_results_threshold]))
             if len(sorted_results_threshold) > 0:
-                hierarchy.set_node_attribute(node_id, '{}_max_jaccard_index'.format(terms.term_name), sorted_results_threshold[0].jaccard_index)
+                hierarchy.set_node_attribute(node_id, '{}_max_jaccard_index'.format(terms.term_name), np.round(sorted_results_threshold[0].jaccard_index, 2))
                 
             updated_node_ids.add(node_id)
 
