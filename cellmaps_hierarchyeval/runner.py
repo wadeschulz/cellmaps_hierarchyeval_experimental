@@ -693,7 +693,6 @@ class CellmapshierarchyevalRunner(object):
             ('CORUM', CORUM_EnrichmentTerms, self._corum),
             ('GO_CC', GO_EnrichmentTerms, self._go_cc),
             ('HPA', HPA_EnrichmentTerms, self._hpa),
-            ('old_MuSIC_U2OS', HiDeF_EnrichmentTerms, '3339fbbc-93d1-11ee-8a13-005056ae23aa')
         ]
 
         for term_name, term_class, term_uuid in term_definitions:
