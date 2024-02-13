@@ -7,7 +7,7 @@ import json
 import numpy as np
 from datetime import date
 
-from requests import RequestException
+from requests import RequestException, JSONDecodeError
 from scipy.stats import hypergeom
 from statsmodels.stats.multitest import multipletests
 import warnings
@@ -86,8 +86,8 @@ class GO_EnrichmentTerms(EnrichmentTerms):
         :rtype: dict
         """
         term_genes_dict = {}
-        all_term_genes = set()        
-        
+        all_term_genes = set()
+
         for node_id, node in terms.get_nodes():
             term = node.get('n')
             genes = terms.get_node_attribute_value(node, 'genes')
@@ -153,8 +153,8 @@ class HiDeF_EnrichmentTerms(EnrichmentTerms):
         :rtype: dict
         """
         term_genes_dict = {}
-        all_term_genes = set()        
-        
+        all_term_genes = set()
+
         for node_id, node in terms.get_nodes():
             genes = terms.get_node_attribute_value(node, 'CD_MemberList')
             if genes is None:
@@ -167,8 +167,8 @@ class HiDeF_EnrichmentTerms(EnrichmentTerms):
             term = node.get('n')
             term_genes_dict[term] = genes
         return term_genes_dict, all_term_genes
-    
-    
+
+
 class CORUM_EnrichmentTerms(EnrichmentTerms):
     """
     This class extends the EnrichmentTerms class to handle terms specific to CORUM.
@@ -205,7 +205,7 @@ class CORUM_EnrichmentTerms(EnrichmentTerms):
         """
         term_genes_dict = {}
         all_term_genes = set()
-        
+
         for node_id, node in terms.get_nodes():
             genes = terms.get_node_attribute_value(node, 'subunits(Gene name)')
             if genes is None:
@@ -244,7 +244,7 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
         """
         term_genes_dict = {}
         all_term_genes = set()
-        
+
         for node_id, node in terms.get_nodes():
             node_name = node.get('n')
             if node_name not in self.hierarchy_genes:
@@ -715,10 +715,15 @@ class CellmapshierarchyevalRunner(object):
             logger.debug('Getting term network try # ' + str(retry_num))
             try:
                 return ndex2.create_nice_cx_from_server(self._ndex_server, uuid=uuid)
-            except RequestException as he:
-                logger.debug(str(he.response.text))
+            except RequestException as e:
+                logger.debug(f"RequestException: {str(e)}")
+            except JSONDecodeError as e:
+                logger.debug(f"Timeout error: {str(e)}")
+            except Exception as e:
+                logger.debug(f"Unexpected error: {str(e)}")
+            finally:
                 retry_num += 1
-            time.sleep(retry_wait)
+                time.sleep(retry_wait)
         raise CellmapshierarchyevalError(str(max_retries) + ' attempts to get network ' +
                                          str(uuid) + ' failed')
 
@@ -843,7 +848,7 @@ class CellmapshierarchyevalRunner(object):
                                          '|'.join([','.join(x.overlap_genes) for x in sorted_results_threshold]))
             if len(sorted_results_threshold) > 0:
                 hierarchy.set_node_attribute(node_id, '{}_max_jaccard_index'.format(terms.term_name), np.round(sorted_results_threshold[0].jaccard_index, 2))
-                
+
             updated_node_ids.add(node_id)
 
         node_ids = list(set(self._hierarchy_helper.get_nodes(hierarchy)).difference(updated_node_ids))
