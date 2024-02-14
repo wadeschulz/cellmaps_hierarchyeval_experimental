@@ -7,7 +7,7 @@ import os
 import tempfile
 import shutil
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 import ndex2
 from cellmaps_utils import constants
@@ -113,3 +113,15 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
             your_instance._get_network_from_server(uuid="some_uuid", retry_wait=0)
 
         self.assertIn('3 attempts to get network some_uuid failed', str(context.exception))
+
+    def test_add_empty_attr_to_hierarchy(self):
+        mock_hierarchy = MagicMock()
+        mock_terms = MagicMock()
+        mock_terms.term_name = "TestTerm"
+        node_ids = [1, 2, 3]
+        self.runner._add_empty_attr_to_hierarchy(mock_hierarchy, mock_terms, node_ids=node_ids)
+        expected_call_count = len(node_ids) * 5
+
+        actual_call_count = mock_hierarchy.set_node_attribute.call_count
+        self.assertEqual(expected_call_count, actual_call_count,
+                         f"Expected set_node_attribute to be called {expected_call_count} times, got {actual_call_count}")

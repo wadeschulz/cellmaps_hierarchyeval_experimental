@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import MagicMock
 
-from cellmaps_hierarchyeval.runner import GO_EnrichmentTerms, CORUM_EnrichmentTerms, HPA_EnrichmentTerms
+from cellmaps_hierarchyeval.runner import GO_EnrichmentTerms, CORUM_EnrichmentTerms, HPA_EnrichmentTerms, \
+    HiDeF_EnrichmentTerms
 
 
 class TestEnrichmentTerms(unittest.TestCase):
@@ -55,6 +56,27 @@ class TestEnrichmentTerms(unittest.TestCase):
         self.assertTrue('gene4' not in hpa_terms.term_genes.get('Location2', []))
         self.assertEqual(len(hpa_terms.term_genes['Location1']), 2)
         self.assertEqual(len(hpa_terms.term_genes['Location2']), 2)
+
+    def test_hidef_enrichment_terms(self):
+        self.terms.get_nodes.return_value = [
+            (1, {'n': 'Term1'}),
+            (2, {'n': 'Term2'}),
+            (3, {'n': 'Term3'})
+        ]
+        self.terms.get_node_attribute_value.side_effect = lambda node, attribute: {
+            ('Term1', 'CD_MemberList'): 'gene1 gene2 gene3',
+            ('Term2', 'CD_MemberList'): 'gene3 gene4',
+            ('Term3', 'CD_MemberList'): 'gene5',
+        }.get((node['n'], attribute), None)
+
+        hidef_terms = HiDeF_EnrichmentTerms(self.terms, 'HiDeF Term', self.hierarchy_genes, min_comp_size=3)
+
+        self.assertIn('Term1', hidef_terms.term_genes)
+        self.assertNotIn('Term2', hidef_terms.term_genes)
+        self.assertNotIn('Term3', hidef_terms.term_genes)
+
+        expected_genes = set(['gene1', 'gene2', 'gene3'])
+        self.assertEqual(hidef_terms.all_term_genes, expected_genes)
 
 
 if __name__ == '__main__':
