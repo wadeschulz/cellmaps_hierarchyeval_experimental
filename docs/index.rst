@@ -14,7 +14,7 @@ The Cell Maps Hierarchy Evaluation annotates a hierarchy created by `Cell Maps G
 by performing enrichment against three NDEx_ networks HPA_, CORUM_, and GO-CC_
 
 * Free software: MIT license
-
+* Source code: https://github.com/idekerlab/cellmaps_hierarchyeval
 
 .. toctree::
    :maxdepth: 2
