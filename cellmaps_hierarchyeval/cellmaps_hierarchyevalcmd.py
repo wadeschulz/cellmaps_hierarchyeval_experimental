@@ -45,6 +45,18 @@ def _parse_arguments(desc, args):
                         help='UUID for HPA network')
     parser.add_argument('--ndex_server', default='http://www.ndexbio.org',
                         help='NDEx server to use')
+    parser.add_argument('--name',
+                        help='Name of this run, needed for FAIRSCAPE. If '
+                             'unset, name value from specified '
+                             'by --hierarchy_dir directory will be used')
+    parser.add_argument('--organization_name',
+                        help='Name of organization running this tool, needed '
+                             'for FAIRSCAPE. If unset, organization name specified '
+                             'in --hierarchy_dir directory will be used')
+    parser.add_argument('--project_name',
+                        help='Name of project running this tool, needed for '
+                             'FAIRSCAPE. If unset, project name specified '
+                             'in --hierarchy_dir directory will be used')
     parser.add_argument('--skip_logging', action='store_true',
                         help='If set, output.log, error.log '
                              'files will not be created')
@@ -100,6 +112,9 @@ def main(args):
                                            go_cc=theargs.go_cc,
                                            hpa=theargs.hpa,
                                            ndex_server=theargs.ndex_server,
+                                           name=theargs.name,
+                                           organization_name=theargs.organization_name,
+                                           project_name=theargs.project_name,
                                            hierarchy_dir=theargs.hierarchy_dir,
                                            skip_logging=theargs.skip_logging,
                                            input_data_dict=theargs.__dict__).run()
