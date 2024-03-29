@@ -13,22 +13,79 @@ class Hierarchy(CX2Network):
     """
     Represents an assembly of proteins in a Hierarchy
     """
-    def __init__(self):
+    def __init__(self, hierarchy=None, interactome=None):
         """
         Constructor
+        :param hierarchy: Hierarchy
+        :type hierarchy: :py:class:`~ndex2.cx2.CX2Network`
+        :param interactome: Parent interactome
+        :type interactome: :py:class:`~ndex2.cx2.CX2Network`
         """
-        pass
+        self._hierarchy = hierarchy
+        self._interactome = interactome
+
+    def get_next_assembly(self):
+        """
+        Generator that gets next assembly in hierarchy
+
+        :return:
+        :rtype: :py:class:`~cellmaps_hierarchyeval.assembly.Assembly`
+        """
+        raise NotImplementedError('not done yet')
+
+        # will iterate across hierarchy CX2Network and create an assembly
+        # object which contains list of gene names and needed info to link
+        # back to this hierarchy node
+
+        # for node_id, node_data in self._hierarchy.get_nodes().items():
+            #yield X
 
 
 class Assembly(object):
     """
-    Represents genes
+    Represents assembly in a hierarchy
     """
-    def __init__(self):
+    def __init__(self, node_id=None, gene_names=None):
         """
         Constructor
+
+        :param node_id: Id of hierarchy node
+        :type node_id: int
+        :param gene_names: list of gene names
+        :type gene_names: list
+        """
+        self._node_id = node_id
+        self._gene_names = gene_names
+
+    def get_assembly_name(self):
+        """
+        Gets name of assembly
+        :return:
+        """
+        return None
+
+    def set_assembly_name(self):
+        """
+        Sets assembly name
+        :return:
         """
         pass
+
+    def get_node_id(self):
+        """
+        Gets node id
+
+        :return:
+        """
+        return self._node_id
+
+    def get_gene_names(self):
+        """
+        Gets gene names
+
+        :return:
+        """
+        return self._gene_names
 
 
 class GenesetAgent(object):
