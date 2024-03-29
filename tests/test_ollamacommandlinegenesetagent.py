@@ -7,21 +7,21 @@ import os
 import tempfile
 import shutil
 import unittest
-from unittest.mock import patch, Mock, MagicMock
 
-import ndex2
-from cellmaps_utils import constants
-from cellmaps_utils.provenance import ProvenanceUtil
-from requests import RequestException
-
+from cellmaps_hierarchyeval.analysis import OllamaCommandLineGeneSetAgent
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
-from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner, NiceCXNetworkHelper, CX2NetworkHelper
 
 
 class TestOllamaCommandLineGeneSetAgent(unittest.TestCase):
     """Tests for `OllamaCommandLineGeneSetAgent` ."""
 
-    def test_update_promt_with_gene_set(self):
+    def test_update_prompt_with_gene_set(self):
+        agent = OllamaCommandLineGeneSetAgent(prompt='Hello @@GENE_SET@@\n'
+                                                     'well\n')
+        new_prompt = agent._update_prompt_with_gene_set(gene_names=['gene1',
+                                                                    'gene2'])
+        self.assertEqual('Hello gene1,gene2\nwell\n', new_prompt)
+
 
 
 

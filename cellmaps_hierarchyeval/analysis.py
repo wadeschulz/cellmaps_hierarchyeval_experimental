@@ -3,9 +3,31 @@ import re
 import subprocess
 import logging
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
-
+from ndex2.cx2 import CX2Network
 
 logger = logging.getLogger(__name__)
+
+
+class Hierarchy(CX2Network):
+    """
+    Represents an assembly of proteins in a Hierarchy
+    """
+    def __init__(self):
+        """
+        Constructor
+        """
+        pass
+
+
+class Assembly(object):
+    """
+    Represents genes
+    """
+    def __init__(self):
+        """
+        Constructor
+        """
+        pass
 
 
 class GenesetAgent(object):
@@ -127,14 +149,9 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
         :return: prompt with gene names inserted
         :rtype: str
         """
-        updated_prompt = ''
-        for line in self._prompt:
-            if GenesetAgent.GENE_SET_TOKEN in line:
-                updated_prompt += re.sub(GenesetAgent.GENE_SET_TOKEN,
-                                         ','.join(gene_names), line)
-            else:
-                updated_prompt += line
-        return line
+
+        return re.sub(GenesetAgent.GENE_SET_TOKEN,
+                      ','.join(gene_names), self._prompt)
 
     def annotate_gene_set(self, gene_names=None,
                           return_values=None):
