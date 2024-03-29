@@ -9,7 +9,7 @@ from ndex2.cx2 import CX2Network
 logger = logging.getLogger(__name__)
 
 
-class Hierarchy(CX2Network):
+class Hierarchy(object):
     """
     Represents an assembly of proteins in a Hierarchy
     """
