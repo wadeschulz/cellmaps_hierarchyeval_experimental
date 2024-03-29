@@ -1,4 +1,5 @@
 
+import os
 import re
 import subprocess
 import logging
@@ -86,6 +87,9 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
     """
     Runs
     """
+
+    DEFAULT_PROMPT_FILE = 'default_prompt.txt'
+
     def __init__(self, prompt=None, model='llama2:latest',
                  ollama_binary='ollama'):
         """
@@ -93,14 +97,38 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
 
         :param prompt: Prompt to pass to LLM put @@GENE_SET@@
                        into prompt to denote where gene set
-                       should be inserted
+                       should be inserted. If ``None`` default
+                       internal prompt is used
         :type prompt: str
         """
 
         super().__init__()
-        self._prompt = prompt
+        if prompt is None:
+            logger.debug('Using default prompt')
+            self._prompt = self.get_default_prompt()
+        else:
+            self._prompt = prompt
         self._model = model
         self._ollama_binary = ollama_binary
+
+    def get_prompt(self):
+        """
+        Gets prompt used by this agent
+        :return:
+        """
+        return self._prompt
+
+    def get_default_prompt(self):
+        """
+        Gets default prompt stored with this package
+
+        :return:
+        :rtype: str
+        """
+        with open(os.path.join(os.path.dirname(__file__),
+                  OllamaCommandLineGeneSetAgent.DEFAULT_PROMPT_FILE),
+                  'r') as f:
+            return f.read()
 
     def _run_cmd(self, cmd, cwd=None, timeout=360):
         """

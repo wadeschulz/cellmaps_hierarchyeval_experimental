@@ -22,7 +22,10 @@ class TestOllamaCommandLineGeneSetAgent(unittest.TestCase):
                                                                     'gene2'])
         self.assertEqual('Hello gene1,gene2\nwell\n', new_prompt)
 
+    def test_prompt_not_set(self):
+        agent = OllamaCommandLineGeneSetAgent(prompt=None)
 
+        self.assertTrue('@@GENE_SET@@' in agent.get_prompt())
 
 
 
