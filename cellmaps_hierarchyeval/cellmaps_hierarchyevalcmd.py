@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import os
 import argparse
 import sys
 import logging
@@ -8,6 +9,8 @@ from cellmaps_utils import logutils
 from cellmaps_utils import constants
 import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
+from cellmaps_hierarchyeval.analysis import OllamaCommandLineGeneSetAgent
+from cellmaps_hierarchyeval.analysis import FakeGeneSetAgent
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,20 @@ def _parse_arguments(desc, args):
                         help='UUID for HPA network')
     parser.add_argument('--ndex_server', default='http://www.ndexbio.org',
                         help='NDEx server to use')
+    parser.add_argument('--ollama_binary', default='/usr/local/bin/ollama',
+                        help='Path to ollama binary')
+    parser.add_argument('--ollama_prompts', nargs='+',
+                        help='Comma delimited value of format <MODEL NAME> or '
+                             '<MODEL NAME>,<PROMPT> '
+                             'where <PROMPT> can be path to prompt file or prompt to '
+                             'run. For insertion of gene set please include {GENE_SET} '
+                             'in prompt and tell LLM to put Process: <name> on first line '
+                             'with name assigned to assembly and Confidence Score: <score> '
+                             'on 2nd line with confidence in the name given. '
+                             'If just <MODEL NAME> is set, then default prompt is used with '
+                             'model specified. '
+                             'NOTE: if <MODEL NAME> is set to FAKE then a completely fake '
+                             ' agent will be used')
     parser.add_argument('--name',
                         help='Name of this run, needed for FAIRSCAPE. If '
                              'unset, name value from specified '
@@ -80,6 +97,50 @@ def _parse_arguments(desc, args):
     return parser.parse_args(args)
 
 
+def get_ollama_geneset_agents(ollama_binary=None, ollama_prompts=None):
+    """
+    Parses **ollama_prompts** from argparse and creates geneset agents
+
+    :param ollama_binary: Path to ollama binary
+    :type ollama_binary: str
+    :param ollama_prompts:
+    :type ollama_prompts: list
+    :return:
+    """
+    if ollama_prompts is None:
+        return None
+
+    res = []
+    for o_prompt in ollama_prompts:
+        if ',' not in o_prompt:
+            if o_prompt.lower() == 'fake':
+                agent = FakeGeneSetAgent()
+            else:
+                agent = OllamaCommandLineGeneSetAgent(ollama_binary=ollama_binary,
+                                                      model=o_prompt)
+            res.append(agent)
+            continue
+
+        split_prompt = o_prompt.split(',')
+        model = split_prompt[0]
+        if model == 'FAKE':
+            logger.debug('Creating FAKE geneset agent')
+            res.append(FakeGeneSetAgent())
+            continue
+
+        raw_prompt = split_prompt[1]
+        if os.path.isfile(prompt):
+            with open(prompt, 'r') as f:
+                prompt = f.read()
+        else:
+            prompt = raw_prompt
+        logger.debug('Creating ollama geneset agent for model: ' + str(model))
+        agent = OllamaCommandLineGeneSetAgent(ollama_binary=ollama_binary,
+                                              model=model, prompt=prompt)
+        res.append(agent)
+    return res
+
+
 def main(args):
     """
     Main entry point for program
@@ -104,6 +165,10 @@ def main(args):
     theargs.version = cellmaps_hierarchyeval.__version__
     try:
         logutils.setup_cmd_logging(theargs)
+
+        ollama_prompts = get_ollama_geneset_agents(ollama_binary=theargs.ollama_binary,
+                                                   ollama_prompts=theargs.ollama_prompts)
+
         return CellmapshierarchyevalRunner(outdir=theargs.outdir,
                                            max_fdr=theargs.max_fdr,
                                            min_jaccard_index=theargs.min_jaccard_index,
@@ -112,6 +177,7 @@ def main(args):
                                            go_cc=theargs.go_cc,
                                            hpa=theargs.hpa,
                                            ndex_server=theargs.ndex_server,
+                                           geneset_agents=ollama_prompts,
                                            name=theargs.name,
                                            organization_name=theargs.organization_name,
                                            project_name=theargs.project_name,
