@@ -10,10 +10,12 @@ import unittest
 from unittest.mock import patch, Mock, MagicMock
 
 import ndex2
+from ndex2.cx2 import CX2Network
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
 from requests import RequestException
 
+from cellmaps_hierarchyeval.analysis import FakeGeneSetAgent
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner, NiceCXNetworkHelper, CX2NetworkHelper
 
@@ -125,3 +127,38 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
         actual_call_count = mock_hierarchy.set_node_attribute.call_count
         self.assertEqual(expected_call_count, actual_call_count,
                          f"Expected set_node_attribute to be called {expected_call_count} times, got {actual_call_count}")
+
+    def test_annotate_hierarchy_with_geneset_annotators(self):
+        gsai = MagicMock()
+        gsai.get_attribute_name_prefix = MagicMock(return_val='foo::')
+        gsai.annotate_gene_set = MagicMock()
+        temp_dir = tempfile.mkdtemp()
+        try:
+            mockannotator = MagicMock()
+            mockannotator.annotate_hierarchy = MagicMock()
+            mockannotator.set_hierarchy_helper = MagicMock()
+            runner = CellmapshierarchyevalRunner(os.path.join(temp_dir, 'foo'),
+                                                 geneset_agents=[gsai],
+                                                 geneset_annotator=mockannotator)
+
+            hierarchy = CX2Network()
+            runner._annotate_hierarchy_with_geneset_annotators(hierarchy=hierarchy)
+            mockannotator.annotate_hierarchy.assert_called()
+            mockannotator.set_hierarchy_helper.assert_called()
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_four_node_hierarchy(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            agent = FakeGeneSetAgent()
+            runner = CellmapshierarchyevalRunner(os.path.join(temp_dir, 'foo'),
+                                                 geneset_agents=[agent])
+
+            hierhelper = CX2NetworkHelper(os.path.join(os.path.dirname(__file__),
+                                                       'data', 'hierarchy.cx2'))
+            hierarchy = hierhelper.get_hierarchy()
+            runner._hierarchy_helper = hierhelper
+            runner._annotate_hierarchy_with_geneset_annotators(hierarchy=hierarchy)
+        finally:
+            shutil.rmtree(temp_dir)

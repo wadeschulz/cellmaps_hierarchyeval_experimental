@@ -2,6 +2,7 @@
 import os
 import re
 import subprocess
+import random
 import logging
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 from ndex2.cx2 import CX2Network
@@ -13,16 +14,25 @@ class Hierarchy(object):
     """
     Represents an assembly of proteins in a Hierarchy
     """
-    def __init__(self, hierarchy=None, interactome=None):
+    def __init__(self, hierarchy=None, interactome=None,
+                 ndex_username=None, ndex_password=None):
         """
         Constructor
         :param hierarchy: Hierarchy
         :type hierarchy: :py:class:`~ndex2.cx2.CX2Network`
         :param interactome: Parent interactome
         :type interactome: :py:class:`~ndex2.cx2.CX2Network`
+        :param ndex_username: NDEx username to use when connecting
+                              to NDEx to obtain interactomes from hierarchy
+        :type ndex_username: str
+        :param ndex_password: NDEx password to use when connecting
+                              to NDEx to obtain interactomes from hierarchy
+        :type ndex_password: str
         """
         self._hierarchy = hierarchy
         self._interactome = interactome
+        self._ndex_username = ndex_username
+        self._ndex_password = ndex_password
 
     def get_next_assembly(self):
         """
@@ -95,49 +105,58 @@ class GenesetAgent(object):
     and return a term name, confidence score, and
     analysis
     """
+    GENE_SET_TOKEN = 'GENE_SET'
 
-    NAME = 'NAME'
-    """
-    Term name analysis return value
-    """
-
-    CONFIDENCE = 'CONFIDENCE'
-    """
-    Confidence analysis return value
-    """
-
-    ANALYSIS = 'ANALYSIS'
-    """
-    Analysis return value
-    """
-
-    ALL = [NAME, CONFIDENCE, ANALYSIS]
-    """
-    List of all analysis return values
-    """
-
-    GENE_SET_TOKEN = '@@GENE_SET@@'
-
-    def __init__(self):
+    def __init__(self, attribute_name_prefix=None):
         """
         Constructor
         """
-        pass
+        self._attribute_name_prefix = attribute_name_prefix
 
-    def annotate_gene_set(self, gene_names=None,
-                          return_values=None):
+    def annotate_gene_set(self, gene_names=None):
         """
         Should be implemented by subclasses
 
         :param gene_names: gene symbols
         :type gene_names:
-        :param return_values: Desired analysis to be returned, can be a list
-                              of one or more of
-        :type return_values: list
         :return:
-        :rtype: dict
+        :rtype: tuple
         """
         raise NotImplementedError('Subclasses should implement')
+
+    def get_attribute_name_prefix(self):
+        """
+        Gets suggested attribute name prefix
+
+        :return:
+        :rtype: str
+        """
+        return self._attribute_name_prefix
+
+
+class FakeGeneSetAgent(GenesetAgent):
+    """
+    Fake geneset agent that generates random numbers for values
+    """
+    def __init__(self, random_seed=None, attribute_name_prefix=None):
+        """
+        Constructor
+        :param random_seed:
+        """
+        super().__init__(attribute_name_prefix=attribute_name_prefix)
+        random.seed(random_seed)
+        if self._attribute_name_prefix is None:
+            self._attribute_name_prefix = 'fake_' + str(random.random()) + '::'
+
+    def annotate_gene_set(self, gene_names=None):
+        """
+
+        :param gene_names:
+        :return:
+        """
+        return 'Fake ' +\
+               str(random.randint(0, 1000)), random.random(), 'Fake full text' +\
+               str(random.randint(0, 1000))
 
 
 class OllamaCommandLineGeneSetAgent(GenesetAgent):
@@ -148,7 +167,8 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
     DEFAULT_PROMPT_FILE = 'default_prompt.txt'
 
     def __init__(self, prompt=None, model='llama2:latest',
-                 ollama_binary='ollama'):
+                 ollama_binary='/usr/local/bin/ollama',
+                 attribute_name_prefix=None):
         """
         Constructor
 
@@ -159,7 +179,7 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
         :type prompt: str
         """
 
-        super().__init__()
+        super().__init__(attribute_name_prefix=attribute_name_prefix)
         if prompt is None:
             logger.debug('Using default prompt')
             self._prompt = self.get_default_prompt()
@@ -167,6 +187,8 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
             self._prompt = prompt
         self._model = model
         self._ollama_binary = ollama_binary
+        if self._attribute_name_prefix is None:
+            self._attribute_name_prefix = 'ollama_' + str(self._model) + '::'
 
     def get_prompt(self):
         """
@@ -235,30 +257,42 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
         :rtype: str
         """
 
-        return re.sub(GenesetAgent.GENE_SET_TOKEN,
-                      ','.join(gene_names), self._prompt)
+        return self._prompt.format(GENE_SET=','.join(gene_names))
 
-    def annotate_gene_set(self, gene_names=None,
-                          return_values=None):
+    def annotate_gene_set(self, gene_names=None):
         """
         Using prompt passed in via constructor, this call
         invokes the LLM specified by **model** set in constructor
 
-        :param gene_names:
+        :param gene_names: Genes to analyze
         :type gene_names: list
-        :param return_values:
-        :type return_values: list
-        :return: responses from agent
-        :rtype: dict
+        :raises CellmapshierarchyevalError: If LLM failed to run
+        :return: ('process name (score)', full output from LLM)
+        :rtype: tuple
         """
-        if return_values is None:
-            ret_vals = GenesetAgent.ALL
-        else:
-            ret_vals = return_values
-
         updated_prompt = self._update_prompt_with_gene_set(gene_names=gene_names)
 
-        e_code, out, err = self._run_cmd([self._ollama_binary, 'run', self._model, updated_prompt])
+        e_code, out, err = self._run_cmd([self._ollama_binary, 'run',
+                                          self._model,
+                                          updated_prompt])
+        if e_code != 0:
+            raise CellmapshierarchyevalError('Received non zero exit code + ' +
+                                             str(e_code) +
+                                             ' calling ' +
+                                             str(self._ollama_binary) +
+                                             '\nstdout: ' + str(out) +
+                                             'stderr\n' + str(err))
 
-        return e_code, out, err
+        process_name = None
+        confidence = None
+        if out is not None:
+            for line in out.split('\n'):
+                if line.startswith('Process: '):
+                    process_name = line[line.index(':')+2:]
+                if line.startswith('Confidence Score: '):
+                    confidence = line[line.index(':')+2:]
+        else:
+            logger.info('LLM output is None')
+
+        return process_name, confidence, out
 

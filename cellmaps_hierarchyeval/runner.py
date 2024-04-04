@@ -6,6 +6,7 @@ import time
 import json
 import numpy as np
 from datetime import date
+from tqdm import tqdm
 
 from requests import RequestException, JSONDecodeError
 from scipy.stats import hypergeom
@@ -260,6 +261,7 @@ class HPA_EnrichmentTerms(EnrichmentTerms):
                     else:
                         term_genes_dict[c] = [node_name]
         return term_genes_dict, all_term_genes
+
 
 class EnrichmentResult(object):
     """
@@ -597,6 +599,66 @@ class NiceCXNetworkHelper(BaseNetworkHelper):
                 f.write('\n')
 
 
+class GeneSetAgentAnnotator(object):
+    """
+    Annotates hierarchy with results from one or more
+    :py:class:`~cellmaps_hierarchyeval.analysis.GeneSetAgent` objects
+    """
+    def __init__(self):
+        """
+        Constructor
+        """
+        self._hierarchy_helper = None
+        self._min_comp_size = 4
+
+    def set_hierarchy_helper(self, hierarchy_helper):
+        """
+        Sets HierarchyHelper
+
+        :param hierarchy_helper:
+        :return:
+        """
+        self._hierarchy_helper = hierarchy_helper
+
+    def set_minimum_comparison_size(self, val):
+        """
+        Only examine genesets of size **val** or larger
+        :param val:
+        :type val: int
+        """
+        self._min_comp_size = val
+
+    def annotate_hierarchy(self, geneset_agent=None,
+                           hierarchy=None):
+        """
+        Annotates hierarchy with
+        :py:class:`~cellmaps_hierarchyeval.analysis.GeneSetAgent`
+        by adding new node attributes
+        :param geneset_agent:
+        :param hierarchy:
+        :return:
+        """
+        for node_id, node in tqdm(self._hierarchy_helper.get_nodes(hierarchy).items(), desc='Assemblies'):
+            gene_names = self._hierarchy_helper.get_node_genes(hierarchy, node)
+            if gene_names is None or len(gene_names) == 0:
+                logger.debug('No genes to analyze')
+                continue
+            if len(gene_names) < self._min_comp_size:
+                logger.debug('Skipping node: ' + str(node_id) +
+                             ' has only ' + len(gene_names) +
+                             '  which is below threshold of ' +
+                             str(self._min_comp_size))
+                continue
+            proc_name,\
+            confidence,\
+            output = geneset_agent.annotate_gene_set(gene_names=gene_names)
+            print('Proc name: ' + str(proc_name))
+            print('confidence: ' + str(confidence))
+            # TODO Add new columns using prefix name
+            #      geneset_agent.get_attribute_name_prefix()
+            #      followed by process, confidence, raw
+
+
 class CellmapshierarchyevalRunner(object):
     """
     Class to run Hierarchy evaluation
@@ -611,12 +673,14 @@ class CellmapshierarchyevalRunner(object):
                  go_cc='f484e8ee-0b0f-11ee-aa50-005056ae23aa',
                  hpa='a6a88e2d-9c0f-11ed-9a1f-005056ae23aa',
                  ndex_server=None,
+                 geneset_agents=None,
                  name=None,
                  organization_name=None,
                  project_name=None,
                  input_data_dict=None,
                  skip_logging=True,
-                 provenance_utils=ProvenanceUtil()):
+                 provenance_utils=ProvenanceUtil(),
+                 geneset_annotator=GeneSetAgentAnnotator()):
         """
         Constructor
 
@@ -664,6 +728,7 @@ class CellmapshierarchyevalRunner(object):
         self._hpa = hpa
         self._ndex_server = ndex_server
         self._start_time = int(time.time())
+        self._geneset_agents = geneset_agents
         self._name = name
         self._project_name = project_name
         self._organization_name = organization_name
@@ -674,6 +739,7 @@ class CellmapshierarchyevalRunner(object):
             self._skip_logging = skip_logging
 
         self._provenance_utils = provenance_utils
+        self._geneset_annotator = geneset_annotator
         self._hierarchy_helper = None
         self._hierarchy_real_ids = []
 
@@ -1094,6 +1160,22 @@ class CellmapshierarchyevalRunner(object):
         raise CellmapshierarchyevalError(f"Input directory '{self._hierarchy_dir}' does not contain neither cx nor cx2 "
                                          f"files.")
 
+    def _annotate_hierarchy_with_geneset_annotators(self, hierarchy=None):
+        """
+        Annotates hierarchy with each GeneSetAgent set in constructor.
+        """
+        if self._geneset_annotator is None:
+            logger.debug('Skipping because geneset_annotator is None')
+            return
+        if self._geneset_agents is None:
+            logger.debug('Skipping because there are no geneset agents')
+            return
+        self._geneset_annotator.set_hierarchy_helper(self._hierarchy_helper)
+        logger.debug('Processing ' + str(len(self._geneset_agents)) + ' geneset agents')
+        for a in tqdm(self._geneset_agents, desc='GeneSet Agents'):
+            self._geneset_annotator.annotate_hierarchy(hierarchy=hierarchy,
+                                                       geneset_agent=a)
+
     def run(self):
         """
         Evaluates CM4AI Hierarchy
@@ -1128,6 +1210,9 @@ class CellmapshierarchyevalRunner(object):
             # annotate hierarchy
             hierarchy = self._hierarchy_helper.get_hierarchy()
             hierarchy = self._term_enrichment_hierarchy(hierarchy)
+
+            self._annotate_hierarchy_with_geneset_annotators(hierarchy=hierarchy)
+
             self._update_annotate_hierarchy(hierarchy, self._outdir)
 
             # write out annotated hierarchy
