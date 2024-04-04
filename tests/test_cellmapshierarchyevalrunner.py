@@ -160,5 +160,21 @@ class TestCellmapshierarchyevalrunner(unittest.TestCase):
             hierarchy = hierhelper.get_hierarchy()
             runner._hierarchy_helper = hierhelper
             runner._annotate_hierarchy_with_geneset_annotators(hierarchy=hierarchy)
+            attributes_with_process = []
+            attributes_with_confidence = []
+            attributes_with_raw = []
+
+            for node, attrs in hierarchy.get_nodes().items():
+                for attr in attrs['v']:
+                    if attr.startswith('fake') and attr.endswith('_process'):
+                        attributes_with_process.append(attr)
+                    elif attr.startswith('fake') and attr.endswith('_confidence'):
+                        attributes_with_confidence.append(attr)
+                    elif attr.startswith('fake') and attr.endswith('_raw'):
+                        attributes_with_raw.append(attr)
+
+            self.assertEqual(len(attributes_with_process), len(hierarchy.get_nodes()))
+            self.assertEqual(len(attributes_with_confidence), len(hierarchy.get_nodes()))
+            self.assertEqual(len(attributes_with_raw), len(hierarchy.get_nodes()))
         finally:
             shutil.rmtree(temp_dir)

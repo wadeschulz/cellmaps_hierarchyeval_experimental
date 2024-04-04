@@ -642,6 +642,9 @@ class GeneSetAgentAnnotator(object):
             gene_names = self._hierarchy_helper.get_node_genes(hierarchy, node)
             if gene_names is None or len(gene_names) == 0:
                 logger.debug('No genes to analyze')
+                hierarchy.set_node_attribute(node_id, f'{geneset_agent.get_attribute_name_prefix()}_process', '')
+                hierarchy.set_node_attribute(node_id, f'{geneset_agent.get_attribute_name_prefix()}_confidence', '')
+                hierarchy.set_node_attribute(node_id, f'{geneset_agent.get_attribute_name_prefix()}_raw', '')
                 continue
             if len(gene_names) < self._min_comp_size:
                 logger.debug('Skipping node: ' + str(node_id) +
@@ -649,14 +652,14 @@ class GeneSetAgentAnnotator(object):
                              '  which is below threshold of ' +
                              str(self._min_comp_size))
                 continue
-            proc_name,\
-            confidence,\
-            output = geneset_agent.annotate_gene_set(gene_names=gene_names)
+            proc_name, \
+                confidence, \
+                output = geneset_agent.annotate_gene_set(gene_names=gene_names)
             print('Proc name: ' + str(proc_name))
             print('confidence: ' + str(confidence))
-            # TODO Add new columns using prefix name
-            #      geneset_agent.get_attribute_name_prefix()
-            #      followed by process, confidence, raw
+            hierarchy.set_node_attribute(node_id, f'{geneset_agent.get_attribute_name_prefix()}_process', proc_name)
+            hierarchy.set_node_attribute(node_id, f'{geneset_agent.get_attribute_name_prefix()}_confidence', confidence)
+            hierarchy.set_node_attribute(node_id, f'{geneset_agent.get_attribute_name_prefix()}_raw', output)
 
 
 class CellmapshierarchyevalRunner(object):
