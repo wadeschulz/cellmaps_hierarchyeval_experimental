@@ -30,6 +30,7 @@ class TestOllamaCommandLineGeneSetAgent(unittest.TestCase):
     def test_get_attribute_name_prefix(self):
         agent = OllamaCommandLineGeneSetAgent(prompt=None)
         self.assertEqual('ollama_llama2:latest::', agent.get_attribute_name_prefix())
+
     def test_prompt_not_set(self):
         agent = OllamaCommandLineGeneSetAgent(prompt=None)
 
