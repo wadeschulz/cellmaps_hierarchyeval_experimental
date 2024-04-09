@@ -10,6 +10,7 @@ from cellmaps_utils import constants
 import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner
 from cellmaps_hierarchyeval.analysis import OllamaCommandLineGeneSetAgent
+from cellmaps_hierarchyeval.analysis import OllamaRestServiceGenesetAgent
 from cellmaps_hierarchyeval.analysis import FakeGeneSetAgent
 
 logger = logging.getLogger(__name__)
@@ -48,8 +49,15 @@ def _parse_arguments(desc, args):
                         help='UUID for HPA network')
     parser.add_argument('--ndex_server', default='http://www.ndexbio.org',
                         help='NDEx server to use')
-    parser.add_argument('--ollama_binary', default='/usr/local/bin/ollama',
-                        help='Path to ollama binary')
+    parser.add_argument('--ollama', default='/usr/local/bin/ollama',
+                        help='Path to ollama command line binary or REST service. '
+                             'If value starts with http it is assumed to be a REST '
+                             'url and all prompts will be passed to service. For'
+                             'REST url the suffix api/generate must be appended. '
+                             'Example: http://foo/api/generate '
+                             'NOTE: ollama integration with this tool is '
+                             'experimental and interface may be '
+                             'changed or removed in the future ')
     parser.add_argument('--ollama_prompts', nargs='+',
                         help='Comma delimited value of format <MODEL NAME> or '
                              '<MODEL NAME>,<PROMPT> '
@@ -61,7 +69,9 @@ def _parse_arguments(desc, args):
                              'If just <MODEL NAME> is set, then default prompt is used with '
                              'model specified. '
                              'NOTE: if <MODEL NAME> is set to FAKE then a completely fake '
-                             ' agent will be used')
+                             ' agent will be used. Also note: ollama integration with this '
+                             'tool is experimental and interface may be '
+                             'changed or removed in the future ')
     parser.add_argument('--name',
                         help='Name of this run, needed for FAIRSCAPE. If '
                              'unset, name value from specified '
@@ -97,12 +107,12 @@ def _parse_arguments(desc, args):
     return parser.parse_args(args)
 
 
-def get_ollama_geneset_agents(ollama_binary=None, ollama_prompts=None):
+def get_ollama_geneset_agents(ollama=None, ollama_prompts=None):
     """
     Parses **ollama_prompts** from argparse and creates geneset agents
 
-    :param ollama_binary: Path to ollama binary
-    :type ollama_binary: str
+    :param ollama: Path to ollama binary or REST service
+    :type ollama: str
     :param ollama_prompts:
     :type ollama_prompts: list
     :return:
@@ -111,13 +121,26 @@ def get_ollama_geneset_agents(ollama_binary=None, ollama_prompts=None):
         return None
 
     res = []
+    use_rest_service = False
+    if ollama.startswith('http'):
+        logger.info('For all agents, using ollama REST service: ' +
+                    str(ollama))
+        if not ollama.endswith('api/generate'):
+            logger.warning(str(ollama) +
+                           ' does not end with api/generate and may not work.')
+        use_rest_service = True
+
     for o_prompt in ollama_prompts:
         if ',' not in o_prompt:
             if o_prompt.lower() == 'fake':
                 agent = FakeGeneSetAgent()
             else:
-                agent = OllamaCommandLineGeneSetAgent(ollama_binary=ollama_binary,
-                                                      model=o_prompt)
+                if use_rest_service is True:
+                    agent = OllamaRestServiceGenesetAgent(rest_url=ollama,
+                                                          model=o_prompt)
+                else:
+                    agent = OllamaCommandLineGeneSetAgent(ollama_binary=ollama,
+                                                          model=o_prompt)
             res.append(agent)
             continue
 
@@ -135,8 +158,12 @@ def get_ollama_geneset_agents(ollama_binary=None, ollama_prompts=None):
         else:
             prompt = raw_prompt
         logger.debug('Creating ollama geneset agent for model: ' + str(model))
-        agent = OllamaCommandLineGeneSetAgent(ollama_binary=ollama_binary,
-                                              model=model, prompt=prompt)
+        if use_rest_service is True:
+            agent = OllamaRestServiceGenesetAgent(rest_url=ollama,
+                                                  model=model, prompt=prompt)
+        else:
+            agent = OllamaCommandLineGeneSetAgent(ollama_binary=ollama,
+                                                  model=model, prompt=prompt)
         res.append(agent)
     return res
 
@@ -155,6 +182,9 @@ def main(args):
     desc = """
     Version {version}
     Takes a HiDeF {hierarchy_file} file from {hierarchy_dir} and runs enrichment tests for GO, CORUM, and HPA terms.
+    
+    Also includes experimental support for invocation of LLMs via Ollama command line or Ollama REST service. 
+    To use see --ollama and --ollama_prompts flags
 
     """.format(version=cellmaps_hierarchyeval.__version__,
                hierarchy_file=constants.HIERARCHY_NETWORK_PREFIX,
@@ -166,7 +196,7 @@ def main(args):
     try:
         logutils.setup_cmd_logging(theargs)
 
-        ollama_prompts = get_ollama_geneset_agents(ollama_binary=theargs.ollama_binary,
+        ollama_prompts = get_ollama_geneset_agents(ollama=theargs.ollama,
                                                    ollama_prompts=theargs.ollama_prompts)
 
         return CellmapshierarchyevalRunner(outdir=theargs.outdir,

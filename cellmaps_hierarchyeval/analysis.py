@@ -1,11 +1,11 @@
 
 import os
-import re
 import subprocess
 import random
+import time
 import logging
+import requests
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
-from ndex2.cx2 import CX2Network
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +182,7 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
         super().__init__(attribute_name_prefix=attribute_name_prefix)
         if prompt is None:
             logger.debug('Using default prompt')
-            self._prompt = self.get_default_prompt()
+            self._prompt = OllamaCommandLineGeneSetAgent.get_default_prompt()
         else:
             self._prompt = prompt
         self._model = model
@@ -197,7 +197,8 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
         """
         return self._prompt
 
-    def get_default_prompt(self):
+    @staticmethod
+    def get_default_prompt():
         """
         Gets default prompt stored with this package
 
@@ -295,4 +296,145 @@ class OllamaCommandLineGeneSetAgent(GenesetAgent):
             logger.info('LLM output is None')
 
         return process_name, confidence, out
+
+
+class OllamaRestServiceGenesetAgent(GenesetAgent):
+    """
+    Calls LLM via REST service. Derived from ServerModel_LLM in
+    https://github.com/idekerlab/agent_evaluation llm.py
+    """
+    def __init__(self, prompt=None, model='llama2:latest',
+                 rest_url=None, temperature=0, max_tokens=1000, seed=42,
+                 attribute_name_prefix=None,
+                 max_retries=5, timeout=120, retry_wait=10):
+        """
+        Constructor
+        """
+        super().__init__(attribute_name_prefix=attribute_name_prefix)
+        if prompt is None:
+            logger.debug('Using default prompt')
+            self._prompt = OllamaCommandLineGeneSetAgent.get_default_prompt()
+        else:
+            self._prompt = prompt
+        self._model = model
+        self._temperature = temperature
+        self._seed = seed
+        self._max_tokens = max_tokens
+        self._rest_url = rest_url
+        self._max_retries = max_retries
+        self._timeout = timeout
+        self._retry_wait = retry_wait
+        if self._attribute_name_prefix is None:
+            self._attribute_name_prefix = 'ollama_' + str(self._model) + '::'
+
+    def get_prompt(self):
+        """
+        Gets prompt used by this agent
+        :return:
+        """
+        return self._prompt
+
+    def _update_prompt_with_gene_set(self, gene_names=None):
+        """
+        Updates prompt inserting gene names
+        :param gene_names:
+        :type gene_names: list
+        :return: prompt with gene names inserted
+        :rtype: str
+        """
+
+        return self._prompt.format(GENE_SET=','.join(gene_names))
+
+    def _get_query(self, gene_names=None):
+        """
+        Gets query for rest service
+        :return:
+        :rtype: dict
+        """
+        updated_prompt = self._update_prompt_with_gene_set(gene_names=gene_names)
+
+        query = {
+            "model": self._model,
+            "prompt": updated_prompt,
+            "stream": False,
+            "options": {
+                "seed": self._seed,
+                "temperature": self._temperature,
+                "num_predict": self._max_tokens
+            }
+        }
+        return query
+
+    def _query_service(self, query=None):
+        """
+
+        :param query:
+        :return:
+        """
+        retries = 0
+        backoff_time = self._retry_wait
+        while retries < self._max_retries:
+            try:
+                response = requests.post(self._rest_url, json=query, timeout=self._timeout)
+
+                # Check if the request was successful
+                if response.status_code == 200:
+                    # return the response
+                    return response.json()['response'], None
+                elif response.status_code in [500, 502, 503, 504]:
+                    logger.info(response.text)
+                    logger.error('Encountering server issue ' + str(response.status_code) +
+                                 '. Retrying in ' + str(backoff_time) + ' seconds')
+                    time.sleep(self._retry_wait)
+                    retries += 1
+                    backoff_time *= 2
+                else:
+                    logger.info(response.text)
+                    error_message = 'The request failed with status code: ' + str(response.status_code)
+                    logger.error(error_message)
+                    return None, error_message
+            except requests.exceptions.RequestException as e:
+                logger.error(response.text)
+                logger.error('status code: ' + str(response.status_code))
+                logger.error('The request failed with an exception: ' + str(e) +
+                             ' Retrying in ' + str(backoff_time) + ' seconds')
+                time.sleep(backoff_time)
+                retries += 1
+                backoff_time *= 2  # Double the backoff time for the next retry
+            except Exception as e:
+                logger.error('An unexpected error occurred: ' + str(e))
+                return None, str(e)
+            return None, "Error: Max retries exceeded, last response error was: " + str(response.status_code)
+
+    def annotate_gene_set(self, gene_names=None):
+        """
+        Using prompt passed in via constructor, this call
+        invokes the LLM specified by **model** set in constructor
+
+        :param gene_names: Genes to analyze
+        :type gene_names: list
+        :raises CellmapshierarchyevalError: If LLM failed to run
+        :return: ('process name (score)', full output from LLM)
+        :rtype: tuple
+        """
+        query = self._get_query(gene_names=gene_names)
+
+        out, err_mesage = self._query_service(query=query)
+
+        if err_mesage is not None:
+            raise CellmapshierarchyevalError('Error running LLM: ' + str(err_mesage))
+
+        process_name = None
+        confidence = None
+        if out is not None:
+            for line in out.split('\n'):
+                if line.startswith('Process: '):
+                    process_name = line[line.index(':')+2:]
+                if line.startswith('Confidence Score: '):
+                    confidence = line[line.index(':')+2:]
+        else:
+            logger.info('LLM output is None')
+
+        return process_name, confidence, out
+
 
