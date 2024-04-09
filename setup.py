@@ -32,7 +32,8 @@ requirements = ['cellmaps_utils',
                 'scipy',
                 'tqdm',
                 'numpy',
-                'ndex2>=3.6.0,<4.0.0']
+                'ndex2>=3.6.0,<4.0.0',
+                'requests']
 
 setup_requirements = []
 
