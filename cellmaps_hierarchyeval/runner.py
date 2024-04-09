@@ -474,7 +474,8 @@ class CX2NetworkHelper(BaseNetworkHelper):
                 node_attributes = node_data["v"]
                 for attribute_name in node_attribute_names:
                     value = node_attributes.get(attribute_name, "")
-                    f.write(str(value) + '\t')
+                    cleaned_value = str(value).replace('\n', ' ').replace('\t', ' ')
+                    f.write(cleaned_value + '\t')
                 f.write('\n')
 
 
