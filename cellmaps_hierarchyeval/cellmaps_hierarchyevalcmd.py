@@ -49,6 +49,9 @@ def _parse_arguments(desc, args):
                         help='UUID for HPA network')
     parser.add_argument('--ndex_server', default='http://www.ndexbio.org',
                         help='NDEx server to use')
+    parser.add_argument('--skip_term_enrichment', action='store_true',
+                        help='If set, SKIP enrichment against networks set '
+                             'via --corum, --go_cc, --hpa')
     parser.add_argument('--ollama', default='/usr/local/bin/ollama',
                         help='Path to ollama command line binary or REST service. '
                              'If value starts with http it is assumed to be a REST '
@@ -58,6 +61,12 @@ def _parse_arguments(desc, args):
                              'NOTE: ollama integration with this tool is '
                              'EXPERIMENTAL and interface may be '
                              'changed or removed in the future ')
+    parser.add_argument('--ollama_user',
+                        help='Username to pass as basic auth to ollama REST '
+                             'service')
+    parser.add_argument('--ollama_password',
+                        help='Password to pass via basic autho to ollama REST '
+                             'service')
     parser.add_argument('--ollama_prompts', nargs='+',
                         help='Comma delimited value of format <MODEL NAME> or '
                              '<MODEL NAME>,<PROMPT> '
@@ -107,7 +116,8 @@ def _parse_arguments(desc, args):
     return parser.parse_args(args)
 
 
-def get_ollama_geneset_agents(ollama=None, ollama_prompts=None):
+def get_ollama_geneset_agents(ollama=None, ollama_prompts=None,
+                              username=None, password=None):
     """
     Parses **ollama_prompts** from argparse and creates geneset agents
 
@@ -139,7 +149,8 @@ def get_ollama_geneset_agents(ollama=None, ollama_prompts=None):
 
         logger.debug('Creating ollama geneset agent for model: ' + str(model))
         if use_rest_service is True:
-            agent = OllamaRestServiceGenesetAgent(rest_url=ollama,
+            agent = OllamaRestServiceGenesetAgent(rest_url=ollama, username=username,
+                                                  password=password,
                                                   model=model, prompt=prompt)
         else:
             agent = OllamaCommandLineGeneSetAgent(ollama_binary=ollama,
@@ -211,7 +222,9 @@ def main(args):
         logutils.setup_cmd_logging(theargs)
 
         ollama_prompts = get_ollama_geneset_agents(ollama=theargs.ollama,
-                                                   ollama_prompts=theargs.ollama_prompts)
+                                                   ollama_prompts=theargs.ollama_prompts,
+                                                   username=theargs.ollama_user,
+                                                   password=theargs.ollama_password)
 
         return CellmapshierarchyevalRunner(outdir=theargs.outdir,
                                            max_fdr=theargs.max_fdr,
@@ -226,6 +239,7 @@ def main(args):
                                            organization_name=theargs.organization_name,
                                            project_name=theargs.project_name,
                                            hierarchy_dir=theargs.hierarchy_dir,
+                                           skip_term_enrichment=theargs.skip_term_enrichment,
                                            skip_logging=theargs.skip_logging,
                                            input_data_dict=theargs.__dict__).run()
     except Exception as e:
