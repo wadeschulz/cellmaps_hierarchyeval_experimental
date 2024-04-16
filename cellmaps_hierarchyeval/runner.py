@@ -682,6 +682,7 @@ class CellmapshierarchyevalRunner(object):
                  organization_name=None,
                  project_name=None,
                  input_data_dict=None,
+                 skip_term_enrichment=False,
                  skip_logging=True,
                  provenance_utils=ProvenanceUtil(),
                  geneset_annotator=GeneSetAgentAnnotator()):
@@ -741,6 +742,8 @@ class CellmapshierarchyevalRunner(object):
             self._skip_logging = False
         else:
             self._skip_logging = skip_logging
+
+        self._skip_term_enrichment = skip_term_enrichment
 
         self._provenance_utils = provenance_utils
         self._geneset_annotator = geneset_annotator
@@ -1213,7 +1216,11 @@ class CellmapshierarchyevalRunner(object):
 
             # annotate hierarchy
             hierarchy = self._hierarchy_helper.get_hierarchy()
-            hierarchy = self._term_enrichment_hierarchy(hierarchy)
+            if self._skip_term_enrichment is None or self._skip_term_enrichment is False:
+                hierarchy = self._term_enrichment_hierarchy(hierarchy)
+            else:
+                logger.info('Skipping term enrichment because '
+                            'skip_term_enrichment flag is True')
 
             self._annotate_hierarchy_with_geneset_annotators(hierarchy=hierarchy)
 
