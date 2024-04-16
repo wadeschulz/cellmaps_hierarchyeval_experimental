@@ -19,7 +19,7 @@ from cellmaps_hierarchyeval.analysis import FakeGeneSetAgent
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 from cellmaps_hierarchyeval.runner import CellmapshierarchyevalRunner, NiceCXNetworkHelper, CX2NetworkHelper
 
-
+@unittest.skipIf(os.getenv('CELLMAPS_HIERARCHYEVAL_BAD_INTERNET') is not None, 'Too slow internet')
 class TestCellmapshierarchyevalrunner(unittest.TestCase):
     """Tests for `cellmaps_hierarchyeval` package."""
 
