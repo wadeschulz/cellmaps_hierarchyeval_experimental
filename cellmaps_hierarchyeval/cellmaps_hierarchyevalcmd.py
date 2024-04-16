@@ -56,7 +56,7 @@ def _parse_arguments(desc, args):
                              'REST url the suffix api/generate must be appended. '
                              'Example: http://foo/api/generate '
                              'NOTE: ollama integration with this tool is '
-                             'experimental and interface may be '
+                             'EXPERIMENTAL and interface may be '
                              'changed or removed in the future ')
     parser.add_argument('--ollama_prompts', nargs='+',
                         help='Comma delimited value of format <MODEL NAME> or '
@@ -70,7 +70,7 @@ def _parse_arguments(desc, args):
                              'model specified. '
                              'NOTE: if <MODEL NAME> is set to FAKE then a completely fake '
                              ' agent will be used. Also note: ollama integration with this '
-                             'tool is experimental and interface may be '
+                             'tool is EXPERIMENTAL and interface may be '
                              'changed or removed in the future ')
     parser.add_argument('--name',
                         help='Name of this run, needed for FAIRSCAPE. If '
@@ -192,9 +192,12 @@ def main(args):
     """
     desc = """
     Version {version}
-    Takes a HiDeF {hierarchy_file} file from {hierarchy_dir} and runs enrichment tests for GO, CORUM, and HPA terms.
+    Takes a HiDeF {hierarchy_file} file from {hierarchy_dir} and runs 
+    enrichment tests for GO, CORUM, and HPA terms.
     
-    Also includes experimental support for invocation of LLMs via Ollama command line or Ollama REST service. 
+    Also includes EXPERIMENTAL support for invocation of LLMs via Ollama command 
+    line or Ollama REST service. 
+    
     To use see --ollama and --ollama_prompts flags
 
     """.format(version=cellmaps_hierarchyeval.__version__,
