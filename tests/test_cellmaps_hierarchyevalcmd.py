@@ -81,9 +81,25 @@ class TestCellmapshierarchyeval(unittest.TestCase):
             self.assertTrue(isinstance(res[2], OllamaRestServiceGenesetAgent))
             self.assertEqual(res[2].get_prompt(), 'a prompt')
 
-
         finally:
             shutil.rmtree(temp_dir)
 
+    def test_get_ollama_geneset_agents_commandline_prompts(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prompt_file = os.path.join(temp_dir, 'myprompt.txt')
+            with open(prompt_file, 'w') as f:
+                f.write('my prompt')
+            o_prompts = ['fake', 'modela,' + prompt_file,
+                         'modelb,a prompt']
+            res = cellmaps_hierarchyevalcmd.get_ollama_geneset_agents(ollama='/bin/ollama',
+                                                                      ollama_prompts=o_prompts)
+            self.assertEqual(3, len(res))
+            self.assertTrue(isinstance(res[0], FakeGeneSetAgent))
+            self.assertTrue(isinstance(res[1], OllamaCommandLineGeneSetAgent))
+            self.assertEqual(res[1].get_prompt(), 'my prompt')
+            self.assertTrue(isinstance(res[2], OllamaCommandLineGeneSetAgent))
+            self.assertEqual(res[2].get_prompt(), 'a prompt')
 
-
+        finally:
+            shutil.rmtree(temp_dir)
