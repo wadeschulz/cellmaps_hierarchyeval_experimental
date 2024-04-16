@@ -131,32 +131,12 @@ def get_ollama_geneset_agents(ollama=None, ollama_prompts=None):
         use_rest_service = True
 
     for o_prompt in ollama_prompts:
-        if ',' not in o_prompt:
-            if o_prompt.lower() == 'fake':
-                agent = FakeGeneSetAgent()
-            else:
-                if use_rest_service is True:
-                    agent = OllamaRestServiceGenesetAgent(rest_url=ollama,
-                                                          model=o_prompt)
-                else:
-                    agent = OllamaCommandLineGeneSetAgent(ollama_binary=ollama,
-                                                          model=o_prompt)
-            res.append(agent)
-            continue
-
-        split_prompt = o_prompt.split(',')
-        model = split_prompt[0]
-        if model == 'FAKE':
+        model, prompt = get_model_prompt_from_string(o_prompt)
+        if model.lower() == 'fake':
             logger.debug('Creating FAKE geneset agent')
             res.append(FakeGeneSetAgent())
             continue
 
-        raw_prompt = split_prompt[1]
-        if os.path.isfile(prompt):
-            with open(prompt, 'r') as f:
-                prompt = f.read()
-        else:
-            prompt = raw_prompt
         logger.debug('Creating ollama geneset agent for model: ' + str(model))
         if use_rest_service is True:
             agent = OllamaRestServiceGenesetAgent(rest_url=ollama,
@@ -166,6 +146,37 @@ def get_ollama_geneset_agents(ollama=None, ollama_prompts=None):
                                                   model=model, prompt=prompt)
         res.append(agent)
     return res
+
+
+def get_model_prompt_from_string(o_prompt):
+    """
+    Given argument from --ollama_prompts flag extract
+    model and prompt which can be in following formats:
+
+    <MODEL>
+    or
+    <MODEL>,<PROMPT>
+
+    Where <MODEL> will always just be a string, but <PROMPT>
+    can be a string or a path to a file
+
+    :param o_prompt: argument passed to --ollama_prompts
+    :type o_prompt: str
+    :return: model, prompt
+    :rtype: tuple
+    """
+    split_prompt = o_prompt.split(',')
+    model = split_prompt[0]
+    prompt = None
+    if len(split_prompt) > 1:
+        raw_prompt = split_prompt[1]
+        if os.path.isfile(raw_prompt):
+            with open(raw_prompt, 'r') as f:
+                prompt = f.read()
+        else:
+            prompt = raw_prompt
+
+    return model, prompt
 
 
 def main(args):
