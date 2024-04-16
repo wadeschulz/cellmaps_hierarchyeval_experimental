@@ -304,11 +304,34 @@ class OllamaRestServiceGenesetAgent(GenesetAgent):
     https://github.com/idekerlab/agent_evaluation llm.py
     """
     def __init__(self, prompt=None, model='llama2:latest',
+                 username=None, password=None,
                  rest_url=None, temperature=0, max_tokens=1000, seed=42,
                  attribute_name_prefix=None,
                  max_retries=5, timeout=120, retry_wait=10):
         """
         Constructor
+
+        :param prompt: Prompt to send to LLM
+        :type prompt: str
+        :param model: Name of model
+        :type model: str
+        :param username: Username to send via Basic Auth to service
+        :type username: str
+        :param password: Password to send via Basic Auth to service
+        :type password: str
+        :param rest_url: URL for service, should end with api/generate
+        :type rest_url: str
+        :param temperature:
+        :param max_tokens:
+        :param seed:
+        :param attribute_name_prefix:
+        :param max_retries: Number of times to retry failed query
+        :type max_retries: int
+        :param timeout: Time in seconds to wait for response from service
+        :type timeout: int or float
+        :param retry_wait: Time in seconds to wait between retries for failed
+                           query
+        :type retry_wait: int or float
         """
         super().__init__(attribute_name_prefix=attribute_name_prefix)
         if prompt is None:
@@ -317,6 +340,8 @@ class OllamaRestServiceGenesetAgent(GenesetAgent):
         else:
             self._prompt = prompt
         self._model = model
+        self._username = username
+        self._password = password
         self._temperature = temperature
         self._seed = seed
         self._max_tokens = max_tokens
@@ -365,17 +390,35 @@ class OllamaRestServiceGenesetAgent(GenesetAgent):
         }
         return query
 
+    def _get_auth_creds(self):
+        """
+        If user and password are set in constructor
+        return them as a tuple otherwise just return
+        None
+        :return: (user as str, password as str) or None
+        :rtype: tuple
+        """
+        if self._username is not None or self._password is not None:
+            return self._username, self._password
+        return None
+
     def _query_service(self, query=None):
         """
+        Query the service
 
         :param query:
-        :return:
+        :type query: dict
+        :return: (response from LLM as str, error message as str or None)
+        :rtype: tuple
         """
         retries = 0
         backoff_time = self._retry_wait
+        auth_creds = self._get_auth_creds()
         while retries < self._max_retries:
             try:
-                response = requests.post(self._rest_url, json=query, timeout=self._timeout)
+                response = requests.post(self._rest_url, json=query,
+                                         timeout=self._timeout,
+                                         auth=auth_creds)
 
                 # Check if the request was successful
                 if response.status_code == 200:
