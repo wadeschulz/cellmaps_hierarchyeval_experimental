@@ -88,11 +88,13 @@ class PerturbSeqAnalysis(object):
         """
         Get similarity scores from **perturbseq_df** that match genes attached to the root
         node of the hierarchy
+
         :param root_pairs:
         :type root_pairs:
         :param perturbseq_df:
         :type perturbseq_df: :py:class:`pandas.DataFrame`
-        :return:
+        :return: (:py:func:`numpy.array`, TODO)
+        :rtype: tuple
         """
         overlap_genes = list(set(root_pairs.index.values).intersection(set(perturbseq_df.index.values)))
         overlap_functional_data = perturbseq_df.loc[overlap_genes]
@@ -120,6 +122,7 @@ class PerturbSeqAnalysis(object):
         :param functional_data_similarity:
         :param hier_system_node_id:
         :return:
+        :rtype: :py:func:`numpy.array`
         """
         cluster_genes = [] # set cluster_genes to list of genes in assembly with id hier_system_node_id
         cluster_genes_in_functional_data = [x for x in cluster_genes if x in functional_data_similarity.index.values]
