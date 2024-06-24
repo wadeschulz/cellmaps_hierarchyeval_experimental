@@ -45,7 +45,8 @@ intersphinx_mapping = {"python": ("https://docs.python.org/3", None),
                        "requests": ("https://requests.readthedocs.io/en/latest/", None),
                        "networkx": ("http://networkx.org/documentation/stable/", None),
                        "pandas": ("https://pandas.pydata.org/docs/", None),
-                       "numpy": ("https://numpy.org/doc/stable/", None)
+                       "numpy": ("https://numpy.org/doc/stable/", None),
+                       "ndex2": ("https://ndex2.readthedocs.io/en/latest/", None)
                       }
 
 # prefix document on section labels for references
