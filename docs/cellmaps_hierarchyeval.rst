@@ -12,6 +12,14 @@ cellmaps\_hierarchyeval.analysis module
    :undoc-members:
    :show-inheritance:
 
+cellmaps\_hierarchyeval.perturb module
+---------------------------------------
+
+.. automodule:: cellmaps_hierarchyeval.perturb
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 cellmaps\_hierarchyeval.cellmaps\_hierarchyevalcmd module
 ---------------------------------------------------------
 
