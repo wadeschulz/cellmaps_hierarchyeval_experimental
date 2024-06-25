@@ -45,8 +45,7 @@ class PerturbSeqAnalysis(object):
         :return: heat map table
         :rtype: :py:class:`pandas.DataFrame`
         """
-        # TODO: convert this into code
-        # load hierarchy and get genes for that system. put into variable
+        # TODO: load hierarchy and get genes for that system. put into variable assembly_genes
         assembly_genes = []
         cluster_genes_in_perturb = [x for x in assembly_genes if x in perturbseq_df.index.values]
 
@@ -60,6 +59,7 @@ class PerturbSeqAnalysis(object):
     def get_root_node_pair_similarities(self):
         """
         Gets root node pair similarities
+        # Todo: explain this better
 
         :return:
         :rtype: :py:class:`pandas.DataFrame`
@@ -90,10 +90,10 @@ class PerturbSeqAnalysis(object):
         node of the hierarchy
 
         :param root_pairs:
-        :type root_pairs:
+        :type root_pairs: # TODO: what is this
         :param perturbseq_df:
         :type perturbseq_df: :py:class:`pandas.DataFrame`
-        :return: (:py:func:`numpy.array`, TODO)
+        :return: (:py:func:`numpy.array`, None) # TODO: replace None with actual type and explanation
         :rtype: tuple
         """
         overlap_genes = list(set(root_pairs.index.values).intersection(set(perturbseq_df.index.values)))
@@ -105,10 +105,14 @@ class PerturbSeqAnalysis(object):
 
     def get_data_simliarity_root(self, functional_data_similarity, overlap_root_pairs):
         """
+        # TODO: explain what this is doing
 
         :param functional_data_similarity:
+        :type functional_data_similarity: # TODO: what is this
         :param overlap_root_pairs:
+        :type overlap_root_pairs: # TODO: what is this
         :return:
+        :rtype: list
         """
         root_mask = overlap_root_pairs > 0
         functional_data_similarity_root = [x for x in
@@ -118,13 +122,16 @@ class PerturbSeqAnalysis(object):
 
     def get_cluster_similarity(self, functional_data_similarity, hier_system_node_id):
         """
+        # TODO: explain what this is doing
 
         :param functional_data_similarity:
+        :type functional_data_similarity: # TODO: what is this
         :param hier_system_node_id:
+        :type hier_system_node_id: int
         :return:
         :rtype: :py:func:`numpy.array`
         """
-        cluster_genes = [] # set cluster_genes to list of genes in assembly with id hier_system_node_id
+        cluster_genes = [] # TODO: set cluster_genes to list of genes in assembly with id hier_system_node_id
         cluster_genes_in_functional_data = [x for x in cluster_genes if x in functional_data_similarity.index.values]
         return music_utils.upper_tri_values(functional_data_similarity.loc[cluster_genes_in_functional_data,
                                                                            cluster_genes_in_functional_data])
