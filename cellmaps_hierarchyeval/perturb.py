@@ -75,10 +75,8 @@ class PerturbSeqAnalysis(object):
             if node[constants.ASPECT_VALUES]['HCX::isRoot']:
                 root_node = nodeid
                 genes = node[constants.ASPECT_VALUES]['CD_MemberList'].split(' ')
-                logger.debug('Number of genes: ' + str(len(genes)))
 
         if root_node is None:
-            logger.error('No root node detected!')
             raise CellmapshierarchyevalError('No root node detected!')
 
         # Get nodes that are directly connected to root node
