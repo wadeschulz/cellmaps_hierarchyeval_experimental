@@ -121,7 +121,7 @@ class PerturbSeqAnalysis(object):
         return functional_data_similarity, overlap_root_pairs
 
     @staticmethod
-    def get_data_simliarity_root(functional_data_similarity, overlap_root_pairs):
+    def get_root_node_pair_similarity(functional_data_similarity, overlap_root_pairs):
         """
         Extracts and returns a list of functional similarity scores for gene pairs that are not in the same community,
             based on a filtered upper triangle extraction of the similarity matrix (ensures that only unique,
@@ -138,10 +138,10 @@ class PerturbSeqAnalysis(object):
         :rtype: list
         """
         root_mask = overlap_root_pairs > 0
-        functional_data_similarity_root = [x for x in
+        root_functional_data_similarity = [x for x in
                                            music_utils.upper_tri_values(functional_data_similarity[root_mask]) if
                                            not math.isnan(x)]
-        return functional_data_similarity_root
+        return root_functional_data_similarity
 
     def get_cluster_similarity(self, functional_data_similarity, hier_system_node_id):
         """
@@ -165,7 +165,7 @@ class PerturbSeqAnalysis(object):
         cluster_genes_in_functional_data = [x for x in cluster_genes if x in functional_data_similarity.index.values]
 
         # Extract the relevant portion of the similarity matrix and return upper triangle values.
-        similarity_submatrix = functional_data_similarity.loc[
-            cluster_genes_in_functional_data, cluster_genes_in_functional_data]
+        cluster_functional_data_similarity = music_utils.upper_tri_values(functional_data_similarity.loc[
+            cluster_genes_in_functional_data, cluster_genes_in_functional_data])
 
-        return music_utils.upper_tri_values(similarity_submatrix)
+        return cluster_functional_data_similarity
