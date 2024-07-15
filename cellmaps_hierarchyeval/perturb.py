@@ -4,6 +4,7 @@ import pandas as pd
 from scipy import stats
 import cellmaps_utils.music_utils as music_utils
 from ndex2 import constants
+from scipy.stats import ranksums
 
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 
@@ -58,7 +59,7 @@ class PerturbSeqAnalysis(object):
         data = data.apply(stats.zscore, axis=1)
         return data
 
-    def get_root_node_pair_similarities(self):
+    def get_root_gene_pair_similarities(self):
         """
         Calculates similarity scores between gene pairs in the root node of a hierarchy. Genes in the same community
         linked to the root node are marked with a similarity of 0, indicating they are directly related,
@@ -121,7 +122,7 @@ class PerturbSeqAnalysis(object):
         return functional_data_similarity, overlap_root_pairs
 
     @staticmethod
-    def get_root_node_pair_similarity(functional_data_similarity, overlap_root_pairs):
+    def get_root_functional_data_similarity(functional_data_similarity, overlap_root_pairs):
         """
         Extracts and returns a list of functional similarity scores for gene pairs that are not in the same community,
             based on a filtered upper triangle extraction of the similarity matrix (ensures that only unique,
@@ -169,3 +170,23 @@ class PerturbSeqAnalysis(object):
             cluster_genes_in_functional_data, cluster_genes_in_functional_data])
 
         return cluster_functional_data_similarity
+
+    @staticmethod
+    def compare_cluster_root_similarities(cluster_functional_data_similarity, root_functional_data_similarity):
+        """
+        Performs a rank-sum test to compare the distribution of functional data similarity scores
+        between a specific cluster and gene pairs in root. This test helps determine if the similarity scores
+        in the cluster are statistically significantly greater than those in the root.
+
+        :param cluster_functional_data_similarity: An array of similarity scores within a specific cluster.
+        :type cluster_functional_data_similarity: numpy.array
+        :param root_functional_data_similarity: A list of non-NaN similarity scores for gene pairs not directly related
+                                                in the root.
+        :type root_functional_data_similarity: list
+        :return: A tuple containing the test statistic and the p-value of the rank-sum test.
+        :rtype: (float, float)
+        """
+        statistic, p_value = ranksums(cluster_functional_data_similarity, root_functional_data_similarity,
+                                      alternative='greater')
+
+        return statistic, p_value
