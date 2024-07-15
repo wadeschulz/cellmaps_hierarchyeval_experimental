@@ -17,7 +17,7 @@ class PerturbSeqAnalysis(object):
     against hierarchy passed in via constructor
     """
 
-    def __init__(self, hierarchy, hierarchy_parent):
+    def __init__(self, hierarchy, hierarchy_parent=None):
         """
         Constructor
 
@@ -83,7 +83,7 @@ class PerturbSeqAnalysis(object):
 
         # Get nodes that are directly connected to root node
         communities_connected_to_root = []
-        for edgeid, edge in self._hierarchy_parent.get_edges().items():
+        for edgeid, edge in self._hierarchy.get_edges().items():
             if edge[constants.EDGE_SOURCE] == root_node:
                 communities_connected_to_root.append(edge[constants.EDGE_TARGET])
 
