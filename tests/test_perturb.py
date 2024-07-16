@@ -33,6 +33,14 @@ class TestPerturbSeqAnalysis(unittest.TestCase):
         self.assertEqual(len(r_val2), 1233)
         self.assertAlmostEqual(r_val1.loc['ESF1', 'TMA16'], 0.65, delta=0.01)
 
+    def test_get_root_functional_data_similarity(self):
+        root_pairs = self.analysis_obj.get_root_gene_pair_similarities()
+        r_val1, r_val2 = self.analysis_obj.get_root_overlapping_pair_similarities(root_pairs, self.perturb_table)
+        result = self.analysis_obj.get_root_functional_data_similarity(r_val1, r_val2)
+        self.assertEqual(len(result), 426402)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
