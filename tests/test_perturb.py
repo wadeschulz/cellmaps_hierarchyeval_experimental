@@ -39,6 +39,22 @@ class TestPerturbSeqAnalysis(unittest.TestCase):
         result = self.analysis_obj.get_root_functional_data_similarity(r_val1, r_val2)
         self.assertEqual(len(result), 426402)
 
+    def test_get_cluster_similarity(self):
+        root_pairs = self.analysis_obj.get_root_gene_pair_similarities()
+        r_val1, r_val2 = self.analysis_obj.get_root_overlapping_pair_similarities(root_pairs, self.perturb_table)
+        result = self.analysis_obj.get_cluster_similarity(r_val1, 72)
+        self.assertEqual(len(result), 45)
+        self.assertAlmostEqual(result[0], 0.83, delta=0.01)
+
+    def test_compare_cluster_root_similarities(self):
+        root_pairs = self.analysis_obj.get_root_gene_pair_similarities()
+        r_val1, r_val2 = self.analysis_obj.get_root_overlapping_pair_similarities(root_pairs, self.perturb_table)
+        sim_root = self.analysis_obj.get_root_functional_data_similarity(r_val1, r_val2)
+        sim_cluster = self.analysis_obj.get_cluster_similarity(r_val1, 72)
+        stat, p_value = self.analysis_obj.compare_cluster_root_similarities(sim_cluster, sim_root)
+        self.assertAlmostEqual(stat, 7.49, delta=0.01)
+        self.assertAlmostEqual(p_value, 3.35 * 10 ** -14, delta=0.01)
+
 
 
 
