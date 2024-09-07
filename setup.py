@@ -37,8 +37,6 @@ requirements = ['cellmaps_utils',
 
 setup_requirements = []
 
-test_requirements = []
-
 setup(
     author=author,
     author_email=email,
@@ -62,11 +60,9 @@ setup(
     name='cellmaps_hierarchyeval',
     packages=find_packages(include=['cellmaps_hierarchyeval']),
     package_dir={'cellmaps_hierarchyeval': 'cellmaps_hierarchyeval'},
-package_data={'cellmaps_hierarchyeval': ['default_prompt.txt']},
+    package_data={'cellmaps_hierarchyeval': ['default_prompt.txt']},
     scripts=['cellmaps_hierarchyeval/cellmaps_hierarchyevalcmd.py'],
     setup_requires=setup_requirements,
-    test_suite='tests',
-    tests_require=test_requirements,
     url=repo_url,
     version=version,
     zip_safe=False)
