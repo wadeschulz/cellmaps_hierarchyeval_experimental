@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+import json
 import os
 import argparse
 import sys
@@ -81,18 +81,23 @@ def _parse_arguments(desc, args):
                              ' agent will be used. Also note: ollama integration with this '
                              'tool is EXPERIMENTAL and interface may be '
                              'changed or removed in the future ')
+    parser.add_argument('--provenance',
+                        help='Path to file containing provenance '
+                             'information about input files in JSON format. '
+                             'This is required if inputdir does not contain '
+                             'ro-crate-metadata.json file.')
     parser.add_argument('--name',
                         help='Name of this run, needed for FAIRSCAPE. If '
                              'unset, name value from specified '
-                             'by --hierarchy_dir directory will be used')
+                             'by --hierarchy_dir directory or provenance file will be used')
     parser.add_argument('--organization_name',
                         help='Name of organization running this tool, needed '
                              'for FAIRSCAPE. If unset, organization name specified '
-                             'in --hierarchy_dir directory will be used')
+                             'in --hierarchy_dir directory or provenance file will be used')
     parser.add_argument('--project_name',
                         help='Name of project running this tool, needed for '
                              'FAIRSCAPE. If unset, project name specified '
-                             'in --hierarchy_dir directory will be used')
+                             'in --hierarchy_dir directory or provenance file will be used')
     parser.add_argument('--skip_logging', action='store_true',
                         help='If set, output.log, error.log '
                              'files will not be created')
@@ -203,12 +208,12 @@ def main(args):
     """
     desc = """
     Version {version}
-    Takes a HiDeF {hierarchy_file} file from {hierarchy_dir} and runs 
+    Takes a HiDeF {hierarchy_file} file from {hierarchy_dir} and runs
     enrichment tests for GO, CORUM, and HPA terms.
-    
-    Also includes EXPERIMENTAL support for invocation of LLMs via Ollama command 
-    line or Ollama REST service. 
-    
+
+    Also includes EXPERIMENTAL support for invocation of LLMs via Ollama command
+    line or Ollama REST service.
+
     To use see --ollama and --ollama_prompts flags
 
     """.format(version=cellmaps_hierarchyeval.__version__,
@@ -218,6 +223,13 @@ def main(args):
     theargs = _parse_arguments(desc, args[1:])
     theargs.program = args[0]
     theargs.version = cellmaps_hierarchyeval.__version__
+
+    if theargs.provenance is not None:
+        with open(theargs.provenance, 'r') as f:
+            json_prov = json.load(f)
+    else:
+        json_prov = None
+
     try:
         logutils.setup_cmd_logging(theargs)
 
@@ -241,7 +253,8 @@ def main(args):
                                            hierarchy_dir=theargs.hierarchy_dir,
                                            skip_term_enrichment=theargs.skip_term_enrichment,
                                            skip_logging=theargs.skip_logging,
-                                           input_data_dict=theargs.__dict__).run()
+                                           input_data_dict=theargs.__dict__,
+                                           provenance=json_prov).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2

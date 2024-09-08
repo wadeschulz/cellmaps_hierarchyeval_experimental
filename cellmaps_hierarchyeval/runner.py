@@ -685,7 +685,8 @@ class CellmapshierarchyevalRunner(object):
                  skip_term_enrichment=False,
                  skip_logging=True,
                  provenance_utils=ProvenanceUtil(),
-                 geneset_annotator=GeneSetAgentAnnotator()):
+                 geneset_annotator=GeneSetAgentAnnotator(),
+                 provenance=None):
         """
         Constructor
 
@@ -749,6 +750,7 @@ class CellmapshierarchyevalRunner(object):
         self._geneset_annotator = geneset_annotator
         self._hierarchy_helper = None
         self._hierarchy_real_ids = []
+        self._provenance = provenance
 
     def _term_enrichment_hierarchy(self, hierarchy):
         """
@@ -969,7 +971,16 @@ class CellmapshierarchyevalRunner(object):
         :raises CellMapsProvenanceError: If there is an error
         """
         logger.debug('Registering rocrate with FAIRSCAPE')
-        name, proj_name, org_name = self._provenance_utils.get_name_project_org_of_rocrate(self._hierarchy_dir)
+        name, proj_name, org_name = 'Hierarchy Enrichment', 'NA', 'NA'
+        if os.path.exists(os.path.join(self._hierarchy_dir, constants.RO_CRATE_METADATA_FILE)):
+            name, proj_name, org_name = self._provenance_utils.get_name_project_org_of_rocrate(self._hierarchy_dir)
+        elif self._provenance is not None:
+            if 'name' in self._provenance:
+                self._name = self._provenance['name']
+            if 'organization-name' in self._provenance:
+                self._organization_name = self._provenance['organization-name']
+            if 'project-name' in self._provenance:
+                self._project_name = self._provenance['project-name']
 
         if self._name is not None:
             name = self._name
