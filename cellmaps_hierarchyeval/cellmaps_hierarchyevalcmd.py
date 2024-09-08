@@ -41,11 +41,11 @@ def _parse_arguments(desc, args):
                         help='Minimum jaccard index')
     parser.add_argument('--min_comp_size', type=int, default=4,
                         help='Minimum term size to consider for enrichment')
-    parser.add_argument('--corum', default='764f7471-9b79-11ed-9a1f-005056ae23aa',
+    parser.add_argument('--corum', default='633291aa-6e1d-11ef-a7fd-005056ae23aa',
                         help='UUID for CORUM network')
-    parser.add_argument('--go_cc', default='f484e8ee-0b0f-11ee-aa50-005056ae23aa',
+    parser.add_argument('--go_cc', default='6722d74d-6e20-11ef-a7fd-005056ae23aa',
                         help='UUID for GO-CC network')
-    parser.add_argument('--hpa', default='a6a88e2d-9c0f-11ed-9a1f-005056ae23aa',
+    parser.add_argument('--hpa', default='68c2f2c0-6e20-11ef-a7fd-005056ae23aa',
                         help='UUID for HPA network')
     parser.add_argument('--ndex_server', default='http://www.ndexbio.org',
                         help='NDEx server to use')
