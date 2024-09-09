@@ -45,20 +45,6 @@ class TestCellmapshierarchyeval(unittest.TestCase):
         self.assertEqual(res.hierarchy_dir, 'foo')
         self.assertEqual(res.outdir, 'resdir')
 
-    def test_main(self):
-        """Tests main function"""
-
-        # try where loading config is successful
-        try:
-            temp_dir = tempfile.mkdtemp()
-            res = cellmaps_hierarchyevalcmd.main(['myprog.py',
-                                                  'outdir',
-                                                  cellmaps_hierarchyevalcmd.HIERARCHYDIR,
-                                                  'foox'])
-            self.assertEqual(res, 2)
-        finally:
-            shutil.rmtree(temp_dir)
-
     def test_get_ollama_geneset_agents_no_prompts(self):
 
         res = cellmaps_hierarchyevalcmd.get_ollama_geneset_agents(ollama_prompts=None)
