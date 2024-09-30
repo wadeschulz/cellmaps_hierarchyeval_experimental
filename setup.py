@@ -60,7 +60,7 @@ setup(
     name='cellmaps_hierarchyeval',
     packages=find_packages(include=['cellmaps_hierarchyeval']),
     package_dir={'cellmaps_hierarchyeval': 'cellmaps_hierarchyeval'},
-    package_data={'cellmaps_hierarchyeval': ['default_prompt.txt']},
+    package_data={'cellmaps_hierarchyeval': ['default_prompt.txt', 'readme_outputs.txt']},
     scripts=['cellmaps_hierarchyeval/cellmaps_hierarchyevalcmd.py'],
     setup_requires=setup_requirements,
     url=repo_url,

@@ -1194,6 +1194,17 @@ class CellmapshierarchyevalRunner(object):
             self._geneset_annotator.annotate_hierarchy(hierarchy=hierarchy,
                                                        geneset_agent=a)
 
+    def generate_readme(self):
+        description = getattr(cellmaps_hierarchyeval, '__description__', 'No description provided.')
+        version = getattr(cellmaps_hierarchyeval, '__version__', '0.0.0')
+
+        with open(os.path.join(os.path.dirname(__file__), 'readme_outputs.txt'), 'r') as f:
+            readme_outputs = f.read()
+
+        readme = readme_outputs.format(DESCRIPTION=description, VERSION=version)
+        with open(os.path.join(self._outdir, 'README.txt'), 'w') as f:
+            f.write(readme)
+
     def run(self):
         """
         Evaluates CM4AI Hierarchy
@@ -1217,6 +1228,9 @@ class CellmapshierarchyevalRunner(object):
                                            start_time=self._start_time,
                                            data={'commandlineargs': self._input_data_dict},
                                            version=cellmaps_hierarchyeval.__version__)
+
+            self.generate_readme()
+
             self._create_rocrate()
             self._register_software()
 
