@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 HIERARCHYDIR = '--hierarchy_dir'
+PATH_TO_OLLAMA = '/usr/local/bin/ollama'
 
 
 def _parse_arguments(desc, args):
@@ -35,24 +36,25 @@ def _parse_arguments(desc, args):
     parser.add_argument('outdir', help='Output directory')
     parser.add_argument(HIERARCHYDIR, required=True,
                         help='Directory where hierarchy was generated')
-    parser.add_argument('--max_fdr', type=float, default='0.05',
+    parser.add_argument('--max_fdr', type=float, default=CellmapshierarchyevalRunner.MAX_FDR,
                         help='Maximum false discovery rate')
-    parser.add_argument('--min_jaccard_index', type=float, default=0.1,
+    parser.add_argument('--min_jaccard_index', type=float,
+                        default=CellmapshierarchyevalRunner.MIN_JACCARD_INDEX,
                         help='Minimum jaccard index')
-    parser.add_argument('--min_comp_size', type=int, default=4,
+    parser.add_argument('--min_comp_size', type=int, default=CellmapshierarchyevalRunner.MIN_COMP_SIZE,
                         help='Minimum term size to consider for enrichment')
-    parser.add_argument('--corum', default='633291aa-6e1d-11ef-a7fd-005056ae23aa',
+    parser.add_argument('--corum', default=CellmapshierarchyevalRunner.CORUM,
                         help='UUID for CORUM network')
-    parser.add_argument('--go_cc', default='6722d74d-6e20-11ef-a7fd-005056ae23aa',
+    parser.add_argument('--go_cc', default=CellmapshierarchyevalRunner.GO_CC,
                         help='UUID for GO-CC network')
-    parser.add_argument('--hpa', default='68c2f2c0-6e20-11ef-a7fd-005056ae23aa',
+    parser.add_argument('--hpa', default=CellmapshierarchyevalRunner.HPA,
                         help='UUID for HPA network')
-    parser.add_argument('--ndex_server', default='http://www.ndexbio.org',
+    parser.add_argument('--ndex_server', default=CellmapshierarchyevalRunner.NDEX_SERVER,
                         help='NDEx server to use')
     parser.add_argument('--skip_term_enrichment', action='store_true',
                         help='If set, SKIP enrichment against networks set '
                              'via --corum, --go_cc, --hpa')
-    parser.add_argument('--ollama', default='/usr/local/bin/ollama',
+    parser.add_argument('--ollama', default=PATH_TO_OLLAMA,
                         help='Path to ollama command line binary or REST service. '
                              'If value starts with http it is assumed to be a REST '
                              'url and all prompts will be passed to service. For'
@@ -121,7 +123,7 @@ def _parse_arguments(desc, args):
     return parser.parse_args(args)
 
 
-def get_ollama_geneset_agents(ollama=None, ollama_prompts=None,
+def get_ollama_geneset_agents(ollama=PATH_TO_OLLAMA, ollama_prompts=None,
                               username=None, password=None):
     """
     Parses **ollama_prompts** from argparse and creates geneset agents

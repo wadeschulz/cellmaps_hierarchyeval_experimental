@@ -605,6 +605,7 @@ class GeneSetAgentAnnotator(object):
     Annotates hierarchy with results from one or more
     :py:class:`~cellmaps_hierarchyeval.analysis.GeneSetAgent` objects
     """
+
     def __init__(self):
         """
         Constructor
@@ -667,16 +668,23 @@ class CellmapshierarchyevalRunner(object):
     """
     Class to run Hierarchy evaluation
     """
+    MAX_FDR = 0.05
+    MIN_JACCARD_INDEX = 0.1
+    MIN_COMP_SIZE = 4
+    CORUM = '633291aa-6e1d-11ef-a7fd-005056ae23aa'
+    GO_CC = '6722d74d-6e20-11ef-a7fd-005056ae23aa'
+    HPA = '68c2f2c0-6e20-11ef-a7fd-005056ae23aa'
+    NDEX_SERVER = 'http://www.ndexbio.org'
 
     def __init__(self, outdir=None,
                  hierarchy_dir=None,
-                 min_comp_size=4,
-                 max_fdr=0.05,
-                 min_jaccard_index=0.1,
-                 corum='633291aa-6e1d-11ef-a7fd-005056ae23aa',
-                 go_cc='6722d74d-6e20-11ef-a7fd-005056ae23aa',
-                 hpa='68c2f2c0-6e20-11ef-a7fd-005056ae23aa',
-                 ndex_server=None,
+                 min_comp_size=MIN_COMP_SIZE,
+                 max_fdr=MAX_FDR,
+                 min_jaccard_index=MIN_JACCARD_INDEX,
+                 corum=CORUM,
+                 go_cc=GO_CC,
+                 hpa=HPA,
+                 ndex_server=NDEX_SERVER,
                  geneset_agents=None,
                  name=None,
                  organization_name=None,
@@ -751,6 +759,24 @@ class CellmapshierarchyevalRunner(object):
         self._hierarchy_helper = None
         self._hierarchy_real_ids = []
         self._provenance = provenance
+
+        if self._input_data_dict is None:
+            self._input_data_dict = {'outdir': self._outdir,
+                                     'hierarchy_dir': self._hierarchy_dir,
+                                     'min_comp_size': self._min_comp_size,
+                                     'max_fdr': self._max_fdr,
+                                     'min_jaccard_index': self._min_jaccard_index,
+                                     'corum': self._corum,
+                                     'go_cc': self._go_cc,
+                                     'hpa': self._hpa,
+                                     'ndex_server': self._ndex_server,
+                                     'geneset_agents': str(self._geneset_agents),
+                                     'name': self._name,
+                                     'project_name': self._project_name,
+                                     'organization_name': self._organization_name,
+                                     'skip_logging': self._skip_logging,
+                                     'provenance': str(self._provenance)
+                                     }
 
     def _term_enrichment_hierarchy(self, hierarchy):
         """
@@ -916,13 +942,16 @@ class CellmapshierarchyevalRunner(object):
                 hierarchy.set_node_attribute(node_id, '{}_descriptions'.format(terms.term_name),
                                              '|'.join([x.description for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node_id, '{}_FDRs'.format(terms.term_name),
-                                         '|'.join(['{:0.2e}'.format(x.adjusted_pval) for x in sorted_results_threshold]))
+                                         '|'.join(
+                                             ['{:0.2e}'.format(x.adjusted_pval) for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node_id, '{}_jaccard_indexes'.format(terms.term_name),
-                                         '|'.join([str(np.round(x.jaccard_index, 2)) for x in sorted_results_threshold]))
+                                         '|'.join(
+                                             [str(np.round(x.jaccard_index, 2)) for x in sorted_results_threshold]))
             hierarchy.set_node_attribute(node_id, '{}_overlap_genes'.format(terms.term_name),
                                          '|'.join([','.join(x.overlap_genes) for x in sorted_results_threshold]))
             if len(sorted_results_threshold) > 0:
-                hierarchy.set_node_attribute(node_id, '{}_max_jaccard_index'.format(terms.term_name), np.round(sorted_results_threshold[0].jaccard_index, 2))
+                hierarchy.set_node_attribute(node_id, '{}_max_jaccard_index'.format(terms.term_name),
+                                             np.round(sorted_results_threshold[0].jaccard_index, 2))
 
             updated_node_ids.add(node_id)
 
