@@ -1,7 +1,7 @@
 ===============================
 Cell Maps Hierarchy Evaluation
 ===============================
-
+The Cell Maps Hierarchy Evaluation is part of the Cell Mapping Toolkit
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_hierarchyeval.svg
         :target: https://pypi.python.org/pypi/cellmaps_hierarchyeval
