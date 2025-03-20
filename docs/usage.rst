@@ -56,6 +56,33 @@ For information invoke :code:`cellmaps_hierarchyevalcmd.py -h`
 - ``--skip_logging``
     If set, disables the creation of log files.
 
+- ``--skip_term_enrichment``
+    If set, SKIP enrichment against networks set via --corum, --go_cc, --hpa
+
+- ``--ollama``
+    Path to ollama command line binary or REST service. If value starts with http it is assumed to be a REST url and
+    all prompts will be passed to service. For REST url the suffix api/generate must be appended.
+    Example: http://foo/api/generate. NOTE: ollama integration with this tool is EXPERIMENTAL and interface may be
+    changed or removed in the future.
+
+- ``--ollama_user``
+    Username to pass as basic auth to ollama REST service
+
+- ``--ollama_password``
+    Password to pass via basic autho to ollama REST service
+
+- ``--ollama_prompts``
+    Comma delimited value of format <MODEL NAME> or <MODEL NAME>,<PROMPT> where <PROMPT> can be path to prompt file or
+    prompt to run. For insertion of gene set please include {GENE_SET} in prompt and tell LLM to put Process: <name> on
+    first line with name assigned to assembly and Confidence Score: <score> on 2nd line with confidence in the name
+    given. If just <MODEL NAME> is set, then default prompt is used with model specified. NOTE: if <MODEL NAME> is set
+    to FAKE then a completely fake agent will be used. Also note: ollama integration with this tool is EXPERIMENTAL and
+    interface may be changed or removed in the future.
+
+- ``--provenance``
+    Path to file containing provenance information about input files in JSON format. This is required if inputdir
+    does not contain ro-crate-metadata.json file.
+
 **Optional**
 
 Logging and verbosity options.
