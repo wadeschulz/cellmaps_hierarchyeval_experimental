@@ -11,11 +11,12 @@ python:
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
     - pip install -r requirements.txt
+    - pip install pytest
     - pip install coveralls
 
 # Command to run tests, e.g. python setup.py test
 script:
-    - coverage run --source cellmaps_hierarchyeval -m unittest discover
+    - coverage run --source cellmaps_hierarchyeval -m pytest
 
 after_success: coveralls
 

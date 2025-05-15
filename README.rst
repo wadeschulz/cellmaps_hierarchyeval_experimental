@@ -44,6 +44,7 @@ Installation
 
    git clone https://github.com/idekerlab/cellmaps_hierarchyeval
    cd cellmaps_hierarchyeval
+   pip install -r requirements_dev.txt
    make dist
    pip install dist/cellmaps_hierarchyevalcmd*whl
 
