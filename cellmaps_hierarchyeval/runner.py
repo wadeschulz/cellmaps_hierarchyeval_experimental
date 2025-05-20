@@ -698,36 +698,54 @@ class CellmapshierarchyevalRunner(object):
         """
         Constructor
 
-        :param outdir:
-        :param hierarchy_dir: Output directory from cellmaps_generate_hierarchy
+        :param outdir: Output directory where results will be written
+        :type outdir: str
+        :param hierarchy_dir: Directory containing the hierarchy network (output of cellmaps_generate_hierarchy)
         :type hierarchy_dir: str
-        :param min_comp_size:
+        :param min_comp_size: Minimum number of genes required to evaluate a node or term (default: 4)
         :type min_comp_size: int
-        :param max_fdr:
+        :param max_fdr: Maximum adjusted p-value (FDR) to consider an enrichment result significant (default: 0.05)
         :type max_fdr: float
-        :param min_jaccard_index:
+        :param min_jaccard_index: Minimum Jaccard index required for an enrichment result to be accepted (default: 0.1)
         :type min_jaccard_index: float
-        :param corum:
+        :param corum: UUID of the CORUM dataset on NDEx for enrichment comparison
         :type corum: str
-        :param go_cc:
+        :param go_cc: UUID of the GO Cellular Component dataset on NDEx
         :type go_cc: str
-        :param hpa:
+        :param hpa: UUID of the Human Protein Atlas dataset on NDEx
         :type hpa: str
-        :param ndex_server:
+        :param ndex_server: NDEx server URL to fetch enrichment datasets from (default: http://www.ndexbio.org)
         :type ndex_server: str
-        :param name:
+        :param geneset_agents: Optional list of :py:class:`~cellmaps_hierarchyeval.analysis.GeneSetAgent` instances for gene set annotation
+        :type geneset_agents: list or None
+        :param name: Optional name to assign to this evaluation run
         :type name: str
-        :param organization_name:
+        :param organization_name: Optional name of the organization running the tool
         :type organization_name: str
-        :param project_name:
+        :param project_name: Optional name of the project to associate with this analysis
         :type project_name: str
-        :param input_data_dict: Command line parameters
+        :param input_data_dict: Dictionary of input arguments, used for provenance tracking and command-line logging
         :type input_data_dict: dict
-        :param skip_logging: If ``True`` skip logging, if ``None`` or ``False`` do NOT skip logging
+        :param skip_term_enrichment: If True, disables built-in CORUM, GO_CC, and HPA term enrichment
+        :type skip_term_enrichment: bool
+        :param skip_logging: If True disables logging, otherwise writes logs to output directory
         :type skip_logging: bool
         :param provenance_utils: ProvenanceUtil object to use for
                                  FAIRSCAPE registration
         :type provenance_utils: py:class:`cellmaps_utils.provenance.ProvenanceUtil`
+        :param geneset_annotator: Object for applying GeneSetAgent annotations to hierarchy nodes
+        :type geneset_annotator: :py:class:`~cellmaps_hierarchyeval.runner.GeneSetAgentAnnotator`
+        :param provenance: Optional provenance dictionary if RO-Crate metadata is unavailable
+                           Example:
+
+                           .. code-block:: python
+
+                                {
+                                    'name': 'Example input dataset',
+                                    'organization-name': 'CM4AI',
+                                    'project-name': 'Example'
+                                }
+        :type provenance: dict
         """
         logger.debug('In constructor')
         if outdir is None:
