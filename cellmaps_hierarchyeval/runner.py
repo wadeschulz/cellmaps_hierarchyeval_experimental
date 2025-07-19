@@ -20,6 +20,9 @@ from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 
+# TODO: try/except for import
+import mlflow
+
 logger = logging.getLogger(__name__)
 
 
@@ -694,7 +697,8 @@ class CellmapshierarchyevalRunner(object):
                  skip_logging=True,
                  provenance_utils=ProvenanceUtil(),
                  geneset_annotator=GeneSetAgentAnnotator(),
-                 provenance=None):
+                 provenance=None,
+                 log_fairops=False):
         """
         Constructor
 
@@ -777,6 +781,9 @@ class CellmapshierarchyevalRunner(object):
         self._hierarchy_helper = None
         self._hierarchy_real_ids = []
         self._provenance = provenance
+        self._log_fairops = log_fairops
+
+        self._metrics = {}
 
         if self._input_data_dict is None:
             self._input_data_dict = {'outdir': self._outdir,
@@ -795,6 +802,14 @@ class CellmapshierarchyevalRunner(object):
                                      'skip_logging': self._skip_logging,
                                      'provenance': str(self._provenance)
                                      }
+            
+        if self._log_fairops:
+            mlflow.log_param("min_comp_size", self._input_data_dict["min_comp_size"])
+            mlflow.log_param("max_fdr", self._input_data_dict["max_fdr"])
+            mlflow.log_param("min_jaccard_index", self._input_data_dict["min_jaccard_index"])
+            mlflow.log_param("corum", self._input_data_dict["corum"])
+            mlflow.log_param("go_cc", self._input_data_dict["go_cc"])
+            mlflow.log_param("hpa", self._input_data_dict["hpa"])
 
     def _term_enrichment_hierarchy(self, hierarchy):
         """
@@ -816,6 +831,13 @@ class CellmapshierarchyevalRunner(object):
 
         for term_name, term_class, term_uuid in term_definitions:
             self._process_term(term_name, term_class, hierarchy, hierarchy_genes, term_uuid)
+
+        if self._log_fairops:
+            for term, jaccard_indexes in self._metrics.items():
+                total_systems = len(jaccard_indexes)
+                total_jaccard = sum(jaccard_indexes)
+                hierarchy_mean_jaccard = total_jaccard / total_systems
+                mlflow.log_metric(f"hierarchy_mean_{term.lower()}_jaccard", hierarchy_mean_jaccard)
 
         return hierarchy
 
@@ -953,6 +975,15 @@ class CellmapshierarchyevalRunner(object):
             node_id = self._hierarchy_real_ids[hierarchy_index]
             sorted_results = sorted(enrichment_results[hierarchy_index], key=lambda obj: obj.jaccard_index,
                                     reverse=True)
+            
+            if self._log_fairops:
+                if terms.term_name not in self._metrics:
+                    self._metrics[terms.term_name] = []
+                if len(sorted_results) > 0:
+                    self._metrics[terms.term_name].append(sorted_results[0].jaccard_index)
+                else:
+                    self._metrics[terms.term_name].append(0.0)
+
             sorted_results_threshold = [x for x in sorted_results if x.accepted]
             hierarchy.set_node_attribute(node_id, '{}_terms'.format(terms.term_name),
                                          '|'.join([x.term for x in sorted_results_threshold]))
