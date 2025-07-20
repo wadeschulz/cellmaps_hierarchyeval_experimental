@@ -20,10 +20,15 @@ from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_hierarchyeval
 from cellmaps_hierarchyeval.exceptions import CellmapshierarchyevalError
 
-# TODO: try/except for import
-import mlflow
 
 logger = logging.getLogger(__name__)
+try:
+    import mlflow
+    MLFLOW_LOADED = True
+except ImportError as ie:
+    MLFLOW_LOADED = False
+    logger.debug('Unable to load MLFlow. Utilities '
+                 'relying on MLFlow will not work : ' + str(ie))
 
 
 class EnrichmentTerms(object):
